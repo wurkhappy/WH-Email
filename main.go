@@ -33,10 +33,10 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	_, err = NewConsumer(handle, conn, *exchange, *exchangeType, *queue, "other", *consumerTag)
-	if err != nil {
-		log.Fatalf("%s", err)
-	}
+	// _, err = NewConsumer(handle, conn, *exchange, *exchangeType, *queue, "other", *consumerTag)
+	// if err != nil {
+	// 	log.Fatalf("%s", err)
+	// }
 	select {}
 }
 
