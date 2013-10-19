@@ -24,9 +24,19 @@ var router urlrouter.Router = urlrouter.Router{
 	Routes: []urlrouter.Route{
 		urlrouter.Route{
 			PathExp: "/user/verify",
-			Dest: map[string]interface{}{
-				"POST": handlers.ConfirmSignup,
-			},
+			Dest:    handlers.ConfirmSignup,
+		},
+		urlrouter.Route{
+			PathExp: "/agreement/submitted",
+			Dest:    handlers.NewAgreement,
+		},
+		urlrouter.Route{
+			PathExp: "/agreement/accepted",
+			Dest:    handlers.AgreementAccept,
+		},
+		urlrouter.Route{
+			PathExp: "/agreement/rejected",
+			Dest:    handlers.AgreementReject,
 		},
 	},
 }
@@ -63,6 +73,7 @@ func routeMapper(deliveries <-chan amqp.Delivery) {
 		func(amqp.Delivery) {
 			route, params, err := router.FindRoute(d.RoutingKey)
 			if err != nil || route == nil {
+				log.Printf("route is: ", route)
 				log.Printf("first error is: %v", err)
 				return
 			}
@@ -70,8 +81,7 @@ func routeMapper(deliveries <-chan amqp.Delivery) {
 			var m map[string]interface{}
 			json.Unmarshal(d.Body, &m)
 			body := m["Body"].(map[string]interface{})
-			routedMap := route.Dest.(map[string]interface{})
-			handler := routedMap[m["Method"].(string)].(func(map[string]string, map[string]interface{}) error)
+			handler := route.Dest.(func(map[string]string, map[string]interface{}) error)
 			err = handler(params, body)
 			if err != nil {
 				log.Printf("second error is: %v", err)
