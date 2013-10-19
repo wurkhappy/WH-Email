@@ -1,12 +1,12 @@
 package handlers
 
 import (
-	"bytes"
+	// "bytes"
 	// "encoding/json"
 	"github.com/wurkhappy/mandrill-go"
 	// "log"
 	"fmt"
-	"net/http"
+	// "net/http"
 	"strconv"
 )
 
@@ -218,8 +218,8 @@ func AgreementChange(params map[string]string, body map[string]interface{}) erro
 		&mandrill.GlobalVar{Name: "AGREEMENT_NUM_PAYMENTS", Content: strconv.Itoa(len(payments))},
 		&mandrill.GlobalVar{Name: "AGREEMENT_COST", Content: fmt.Sprintf("%g", totalCost)},
 	)
-	message.To = []mandrill.To{{Email: freelancer["email"].(string), Name: createFullName(freelancer)}}
-	message.Subject = clientName + " Requests Changes to Your Agreement"
+	message.To = []mandrill.To{{Email: client["email"].(string), Name: createFullName(client)}}
+	message.Subject = freelancerName + " Requests Changes to Your Agreement"
 	m.Args["message"] = message
 	m.Args["template_name"] = "Agreement Change"
 	m.Args["template_content"] = []mandrill.TemplateContent{{Name: "blah", Content: "nfd;jd;fjvnbd"}}
@@ -231,10 +231,4 @@ func AgreementChange(params map[string]string, body map[string]interface{}) erro
 	return nil
 }
 
-func signURL(userID, path string) string {
-	body := bytes.NewReader([]byte(`{"path":"` + path + `"}`))
-	r, _ := http.NewRequest("POST", "http://localhost:3000/user/"+userID+"/sign", body)
-	respData, _ := sendRequest(r)
-	signature := respData["signature"].(string)
-	return signature
-}
+

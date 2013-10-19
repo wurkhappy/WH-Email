@@ -38,6 +38,26 @@ var router urlrouter.Router = urlrouter.Router{
 			PathExp: "/agreement/rejected",
 			Dest:    handlers.AgreementReject,
 		},
+		urlrouter.Route{
+			PathExp: "/agreement/updated",
+			Dest:    handlers.AgreementChange,
+		},
+		urlrouter.Route{
+			PathExp: "/payment/submitted",
+			Dest:    handlers.PaymentRequest,
+		},
+		urlrouter.Route{
+			PathExp: "/payment/accepted",
+			Dest:    handlers.PaymentAccepted,
+		},
+		urlrouter.Route{
+			PathExp: "/payment/rejected",
+			Dest:    handlers.PaymentReject,
+		},
+		urlrouter.Route{
+			PathExp: "/payment/sent",
+			Dest:    handlers.PaymentSent,
+		},
 	},
 }
 
@@ -69,11 +89,10 @@ func main() {
 
 func routeMapper(deliveries <-chan amqp.Delivery) {
 	for d := range deliveries {
-		//this should use a goroutine but channel closes under heavy load
+		//BUG: this should use a goroutine but channel closes under heavy load. Not sure why
 		func(amqp.Delivery) {
 			route, params, err := router.FindRoute(d.RoutingKey)
 			if err != nil || route == nil {
-				log.Printf("route is: ", route)
 				log.Printf("first error is: %v", err)
 				return
 			}

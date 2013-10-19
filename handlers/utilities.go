@@ -52,3 +52,41 @@ func getUserInfo(id string) map[string]interface{} {
 	}
 	return nil
 }
+
+func signURL(userID, path string) string {
+	body := bytes.NewReader([]byte(`{"path":"` + path + `"}`))
+	r, _ := http.NewRequest("POST", "http://localhost:3000/user/"+userID+"/sign", body)
+	respData, _ := sendRequest(r)
+	signature := respData["signature"].(string)
+	return signature
+}
+
+func getUserMessage(body map[string]interface{}) string {
+	var userMessage string = " "
+	if msg, ok := body["message"]; ok {
+		userMessage = msg.(string)
+	}
+
+	return userMessage
+}
+
+func getEmailOrName(user map[string]interface{}) string {
+	name := createFullName(user)
+	if name == "" {
+		name = user["email"].(string)
+	}
+
+	return name
+}
+
+func getTotalCost(agreement map[string]interface{}) float64 {
+	var totalCost float64
+	payments := agreement["payments"].([]interface{})
+	for _, payment := range payments {
+		model := payment.(map[string]interface{})
+		totalCost += model["amount"].(float64)
+	}
+
+	return totalCost
+
+}
