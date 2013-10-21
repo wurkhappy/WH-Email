@@ -17,6 +17,7 @@ func ConfirmSignup(params map[string]string, body map[string]interface{}) error 
 	email := body["email"].(string)
 	path := "/user/" + userID + "/verify"
 	signature := signURL(userID, path)
+
 	m := mandrill.NewCall()
 	m.Category = "messages"
 	m.Method = "send-template"
@@ -29,18 +30,35 @@ func ConfirmSignup(params map[string]string, body map[string]interface{}) error 
 	m.Args["template_name"] = "Confirm Email and Signup"
 	m.Args["template_content"] = []mandrill.TemplateContent{{Name: "blah", Content: "nfd;jd;fjvnbd"}}
 
-	resp, err := m.Send()
+	_, err := m.Send()
 	if err != nil {
 		return err
 	}
+	return nil
+}
 
-	var requestData map[string]interface{}
-	buf := new(bytes.Buffer)
-	buf.ReadFrom(resp.Body)
-	data := buf.Bytes()
-	json.Unmarshal(data, &requestData)
-	log.Print(requestData)
-	log.Print(err)
+func AgreementToNewUser(params map[string]string, body map[string]interface{}) error {
+	userID := body["id"].(string)
+	email := body["email"].(string)
+	path := "/user/" + userID + "/verify"
+	signature := signURL(userID, path)
+	
+	m := mandrill.NewCall()
+	m.Category = "messages"
+	m.Method = "send-template"
+	message := new(mandrill.Message)
+	message.GlobalMergeVars = append(message.GlobalMergeVars,
+		&mandrill.GlobalVar{Name: "signup_link", Content: "http://localhost:4000" + path + "?signature=" + signature},
+	)
+	message.To = []mandrill.To{{Email: email}}
+	m.Args["message"] = message
+	m.Args["template_name"] = "Confirm Email and Signup"
+	m.Args["template_content"] = []mandrill.TemplateContent{{Name: "blah", Content: "nfd;jd;fjvnbd"}}
+
+	_, err := m.Send()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
