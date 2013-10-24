@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/nu7hatch/gouuid"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -56,12 +56,24 @@ func getUserInfo(id string) map[string]interface{} {
 	return nil
 }
 
-func signURL(userID, path, expiration string) string {
-	body := bytes.NewReader([]byte(`{"path":"` + path + `", "expiration":` + expiration + `}`))
-	r, _ := http.NewRequest("POST", "http://localhost:3000/user/"+userID+"/sign", body)
-	respData, _ := sendRequest(r)
-	signature := respData["signature"].(string)
-	return signature
+func signURL(userID, path, method string, expiration int) string {
+	tkn, _ := uuid.NewV4()
+	token := tkn.String()
+	expirationDate := int(time.Now().Add(time.Duration(expiration) * time.Second).Unix())
+	c := redisPool.Get()
+	if _, err := c.Do("HMSET", token, "path", path, "method", method, "expiration", expirationDate); err != nil {
+		log.Panic(err)
+	}
+
+	if _, err := c.Do("EXPIRE", token, expiration); err != nil {
+		log.Panic(err)
+	}
+
+	return token
+}
+func createSignatureParams(userID, path string, expiration int) string {
+	token := signURL(userID, path, "GET", expiration)
+	return "token=" + token
 }
 
 func getUserMessage(body map[string]interface{}) string {
@@ -92,12 +104,6 @@ func getTotalCost(agreement map[string]interface{}) float64 {
 
 	return totalCost
 
-}
-
-func createSignatureParams(userID, path string, expiration int) string {
-	exp := strconv.Itoa(expiration)
-	signature := signURL(userID, path, exp)
-	return "signature=" + signature + "&access_key=" + userID + "&expiration=" + exp
 }
 
 func Test(params map[string]string, body map[string]interface{}) error {

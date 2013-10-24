@@ -27,6 +27,10 @@ var router urlrouter.Router = urlrouter.Router{
 			Dest:    handlers.ConfirmSignup,
 		},
 		urlrouter.Route{
+			PathExp: "/user/password/forgot",
+			Dest:    handlers.ForgotPassword,
+		},
+		urlrouter.Route{
 			PathExp: "/agreement/submitted",
 			Dest:    handlers.NewAgreement,
 		},
