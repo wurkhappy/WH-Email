@@ -8,6 +8,7 @@ import (
 	"fmt"
 	// "net/http"
 	"strconv"
+	"time"
 )
 
 func init() {
@@ -18,13 +19,14 @@ func ConfirmSignup(params map[string]string, body map[string]interface{}) error 
 	userID := body["id"].(string)
 	email := body["email"].(string)
 	path := "/user/" + userID + "/verify"
-	signature := signURL(userID, path)
+	expiration := int(time.Now().Add(time.Hour * 24 * 5).Unix())
+	signatureParams := createSignatureParams(userID, path, expiration)
 	m := mandrill.NewCall()
 	m.Category = "messages"
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "signup_link", Content: "http://localhost:4000" + path + "?signature=" + signature + "&access_key=" + userID},
+		&mandrill.GlobalVar{Name: "signup_link", Content: "http://localhost:4000" + path + "?" + signatureParams},
 	)
 	message.To = []mandrill.To{{Email: email, Name: createFullName(body)}}
 	m.Args["message"] = message
@@ -45,7 +47,8 @@ func NewAgreement(params map[string]string, body map[string]interface{}) error {
 	path := "/agreement/" + agreementID
 	client := getUserInfo(clientID)
 	freelancer := getUserInfo(freelancerID)
-	signature := signURL(clientID, path)
+	expiration := int(time.Now().Add(time.Hour * 24 * 5).Unix())
+	signatureParams := createSignatureParams(clientID, path, expiration)
 	freelancerName := createFullName(freelancer)
 	if freelancerName == "" {
 		freelancerName = freelancer["email"].(string)
@@ -62,7 +65,7 @@ func NewAgreement(params map[string]string, body map[string]interface{}) error {
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?signature=" + signature + "&access_key=" + clientID},
+		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: body["title"].(string)},
 		&mandrill.GlobalVar{Name: "FREELANCER_NAME", Content: freelancerName},
 		&mandrill.GlobalVar{Name: "PAYMENTS_TOTAL", Content: fmt.Sprintf("%g", totalCost)},
@@ -94,7 +97,8 @@ func AgreementAccept(params map[string]string, body map[string]interface{}) erro
 	path := "/agreement/" + agreementID
 	client := getUserInfo(clientID)
 	freelancer := getUserInfo(freelancerID)
-	signature := signURL(freelancerID, path)
+	expiration := int(time.Now().Add(time.Hour * 24 * 5).Unix())
+	signatureParams := createSignatureParams(freelancerID, path, expiration)
 	clientName := createFullName(client)
 	if clientName == "" {
 		clientName = client["email"].(string)
@@ -111,7 +115,7 @@ func AgreementAccept(params map[string]string, body map[string]interface{}) erro
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?signature=" + signature + "&access_key=" + freelancerID},
+		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement["title"].(string)},
 		&mandrill.GlobalVar{Name: "CLIENT_FULLNAME", Content: clientName},
 		&mandrill.GlobalVar{Name: "CLIENT_MESSAGE", Content: userMessage},
@@ -144,7 +148,8 @@ func AgreementReject(params map[string]string, body map[string]interface{}) erro
 	path := "/agreement/" + agreementID
 	client := getUserInfo(clientID)
 	freelancer := getUserInfo(freelancerID)
-	signature := signURL(freelancerID, path)
+	expiration := int(time.Now().Add(time.Hour * 24 * 5).Unix())
+	signatureParams := createSignatureParams(freelancerID, path, expiration)
 	clientName := createFullName(client)
 	if clientName == "" {
 		clientName = client["email"].(string)
@@ -161,7 +166,7 @@ func AgreementReject(params map[string]string, body map[string]interface{}) erro
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?signature=" + signature + "&access_key=" + freelancerID},
+		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement["title"].(string)},
 		&mandrill.GlobalVar{Name: "CLIENT_FULLNAME", Content: clientName},
 		&mandrill.GlobalVar{Name: "CLIENT_MESSAGE", Content: userMessage},
@@ -194,7 +199,8 @@ func AgreementChange(params map[string]string, body map[string]interface{}) erro
 	path := "/agreement/" + agreementID
 	client := getUserInfo(clientID)
 	freelancer := getUserInfo(freelancerID)
-	signature := signURL(clientID, path)
+	expiration := int(time.Now().Add(time.Hour * 24 * 5).Unix())
+	signatureParams := createSignatureParams(clientID, path, expiration)
 	freelancerName := createFullName(freelancer)
 	if freelancerName == "" {
 		freelancerName = freelancer["email"].(string)
@@ -211,7 +217,7 @@ func AgreementChange(params map[string]string, body map[string]interface{}) erro
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?signature=" + signature + "&access_key=" + clientID},
+		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement["title"].(string)},
 		&mandrill.GlobalVar{Name: "USER_FULLNAME", Content: freelancerName},
 		&mandrill.GlobalVar{Name: "CLIENT_MESSAGE", Content: userMessage},
@@ -230,5 +236,3 @@ func AgreementChange(params map[string]string, body map[string]interface{}) erro
 	}
 	return nil
 }
-
-

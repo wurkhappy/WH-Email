@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -55,8 +56,8 @@ func getUserInfo(id string) map[string]interface{} {
 	return nil
 }
 
-func signURL(userID, path string) string {
-	body := bytes.NewReader([]byte(`{"path":"` + path + `"}`))
+func signURL(userID, path, expiration string) string {
+	body := bytes.NewReader([]byte(`{"path":"` + path + `", "expiration":` + expiration + `}`))
 	r, _ := http.NewRequest("POST", "http://localhost:3000/user/"+userID+"/sign", body)
 	respData, _ := sendRequest(r)
 	signature := respData["signature"].(string)
@@ -91,6 +92,12 @@ func getTotalCost(agreement map[string]interface{}) float64 {
 
 	return totalCost
 
+}
+
+func createSignatureParams(userID, path string, expiration int) string {
+	exp := strconv.Itoa(expiration)
+	signature := signURL(userID, path, exp)
+	return "signature=" + signature + "&access_key=" + userID + "&expiration=" + exp
 }
 
 func Test(params map[string]string, body map[string]interface{}) error {
