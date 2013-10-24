@@ -61,7 +61,7 @@ func signURL(userID, path, method string, expiration int) string {
 	token := tkn.String()
 	expirationDate := int(time.Now().Add(time.Duration(expiration) * time.Second).Unix())
 	c := redisPool.Get()
-	if _, err := c.Do("HMSET", token, "path", path, "method", method, "expiration", expirationDate); err != nil {
+	if _, err := c.Do("HMSET", token, "path", path, "method", method, "expiration", expirationDate, "userID", userID); err != nil {
 		log.Panic(err)
 	}
 

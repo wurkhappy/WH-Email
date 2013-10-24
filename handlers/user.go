@@ -48,11 +48,12 @@ func ForgotPassword(params map[string]string, body map[string]interface{}) error
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "signup_link", Content: "http://localhost:4000" + path + "?" + signatureParams},
+		&mandrill.GlobalVar{Name: "PASSWORD_RESET_LINK", Content: "http://localhost:4000" + path + "?" + signatureParams},
+		&mandrill.GlobalVar{Name: "USER_FULLNAME", Content: createFullName(user)},
 	)
 	message.To = []mandrill.To{{Email: email, Name: createFullName(user)}}
 	m.Args["message"] = message
-	m.Args["template_name"] = "Confirm Email and Signup"
+	m.Args["template_name"] = "User Reset Password"
 	m.Args["template_content"] = []mandrill.TemplateContent{{Name: "blah", Content: "nfd;jd;fjvnbd"}}
 
 	_, err := m.Send()
