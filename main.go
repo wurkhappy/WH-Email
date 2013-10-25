@@ -30,10 +30,10 @@ var router urlrouter.Router = urlrouter.Router{
 			PathExp: "/user/password/forgot",
 			Dest:    handlers.ForgotPassword,
 		},
-		// urlrouter.Route{
-		// 	PathExp: "/agreement/submitted",
-		// 	Dest:    handlers.NewAgreement,
-		// },
+		urlrouter.Route{
+			PathExp: "/agreement/submitted",
+			Dest:    handlers.NewAgreement,
+		},
 		urlrouter.Route{
 			PathExp: "/agreement/accepted",
 			Dest:    handlers.AgreementAccept,
