@@ -36,26 +36,6 @@ func createFullName(user map[string]interface{}) string {
 	return fullname
 }
 
-func getUserInfo(id string) map[string]interface{} {
-	if id == "" {
-		return make(map[string]interface{})
-	}
-	client := &http.Client{}
-	r, _ := http.NewRequest("GET", "http://localhost:3000/user/search?userid="+id, nil)
-	resp, err := client.Do(r)
-	if err != nil {
-		fmt.Printf("Error : %s", err)
-	}
-	clientBuf := new(bytes.Buffer)
-	clientBuf.ReadFrom(resp.Body)
-	var clientData []map[string]interface{}
-	json.Unmarshal(clientBuf.Bytes(), &clientData)
-	if len(clientData) > 0 {
-		return clientData[0]
-	}
-	return nil
-}
-
 func signURL(userID, path, method string, expiration int) string {
 	tkn, _ := uuid.NewV4()
 	token := tkn.String()
@@ -94,17 +74,7 @@ func getEmailOrName(user map[string]interface{}) string {
 	return name
 }
 
-func getTotalCost(agreement map[string]interface{}) float64 {
-	var totalCost float64
-	payments := agreement["payments"].([]interface{})
-	for _, payment := range payments {
-		model := payment.(map[string]interface{})
-		totalCost += model["amount"].(float64)
-	}
 
-	return totalCost
-
-}
 
 func Test(params map[string]string, body map[string]interface{}) error {
 	time.Sleep(time.Second * 1)

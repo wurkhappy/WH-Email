@@ -2,7 +2,7 @@ package handlers
 
 import (
 	// "bytes"
-	// "encoding/json"
+	"encoding/json"
 	"github.com/wurkhappy/mandrill-go"
 	// "log"
 	"fmt"
@@ -14,74 +14,81 @@ func init() {
 	mandrill.APIkey = "AiZeQTNtBDY4omKvajApkg"
 }
 
-func NewAgreement(params map[string]string, body map[string]interface{}) error {
-	agreementID := body["id"].(string)
-	clientID := body["clientID"].(string)
-	freelancerID := body["freelancerID"].(string)
-	path := "/agreement/" + agreementID
-	client := getUserInfo(clientID)
-	freelancer := getUserInfo(freelancerID)
-	expiration := 60 * 60 * 24
-	signatureParams := createSignatureParams(clientID, path, expiration)
-	freelancerName := createFullName(freelancer)
-	if freelancerName == "" {
-		freelancerName = freelancer["email"].(string)
-	}
-	var totalCost float64
-	payments := body["payments"].([]interface{})
-	for _, payment := range payments {
-		model := payment.(map[string]interface{})
-		totalCost += model["amount"].(float64)
-	}
-
-	m := mandrill.NewCall()
-	m.Category = "messages"
-	m.Method = "send-template"
-	message := new(mandrill.Message)
-	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?" + signatureParams},
-		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: body["title"].(string)},
-		&mandrill.GlobalVar{Name: "FREELANCER_NAME", Content: freelancerName},
-		&mandrill.GlobalVar{Name: "PAYMENTS_TOTAL", Content: fmt.Sprintf("%g", totalCost)},
-	)
-	message.To = []mandrill.To{{Email: client["email"].(string), Name: createFullName(client)}}
-	message.Subject = freelancerName + " Sent you a New Agreeement"
-	m.Args["message"] = message
-	m.Args["subject"] = freelancerName + " Sent you a New Agreeement"
-	m.Args["template_name"] = "Agreement New User"
-	m.Args["template_content"] = []mandrill.TemplateContent{{Name: "blah", Content: "nfd;jd;fjvnbd"}}
-
-	_, err := m.Send()
+func NewAgreement(params map[string]string, body map[string]*json.RawMessage) error {
+	template := "Agreement New User"
+	vars := make([]*mandrill.GlobalVar, 0)
+	err := agrmntFreelancerSendToClient(body, template, vars)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func AgreementAccept(params map[string]string, body map[string]interface{}) error {
-	agreement := body["agreement"].(map[string]interface{})
-	agreementID := agreement["id"].(string)
-	clientID := agreement["clientID"].(string)
-	freelancerID := agreement["freelancerID"].(string)
-	var userMessage string = " "
-	if msg, ok := body["message"]; ok {
-		userMessage = msg.(string)
+func AgreementChange(params map[string]string, body map[string]*json.RawMessage) error {
+	template := "Agreement Change"
+	vars := make([]*mandrill.GlobalVar, 0)
+	err := agrmntFreelancerSendToClient(body, template, vars)
+	if err != nil {
+		return err
 	}
+	return nil
+}
 
+func AgreementAccept(params map[string]string, body map[string]*json.RawMessage) error {
+	template := "Agreement Accept"
+	vars := make([]*mandrill.GlobalVar, 0)
+	err := agrmntClientSendToFreelancer(body, template, vars)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func AgreementReject(params map[string]string, body map[string]*json.RawMessage) error {
+	template := "Agreement Dispute"
+	vars := make([]*mandrill.GlobalVar, 0)
+	err := agrmntClientSendToFreelancer(body, template, vars)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type Agreement struct {
+	ID           string     `json:"id" bson:"_id"`
+	Version      float64    `json:"version"`
+	ClientID     string     `json:"clientID"`
+	FreelancerID string     `json:"freelancerID"`
+	Title        string     `json:"title"`
+	Payments     []*Payment `json:"payments"`
+}
+
+func (a *Agreement) getTotalCost() float64 {
+	var totalCost float64
+	payments := a.Payments
+	for _, payment := range payments {
+		totalCost += payment.Amount
+	}
+	return totalCost
+}
+
+func agrmntClientSendToFreelancer(body map[string]*json.RawMessage, template string, vars []*mandrill.GlobalVar) error {
+	var agreement *Agreement
+	json.Unmarshal(*body["agreement"], &agreement)
+	agreementID := agreement.ID
+	clientID := agreement.ClientID
+	freelancerID := agreement.FreelancerID
 	path := "/agreement/" + agreementID
 	client := getUserInfo(clientID)
 	freelancer := getUserInfo(freelancerID)
 	expiration := 60 * 60 * 24
 	signatureParams := createSignatureParams(freelancerID, path, expiration)
-	clientName := createFullName(client)
-	if clientName == "" {
-		clientName = client["email"].(string)
-	}
-	var totalCost float64
-	payments := agreement["payments"].([]interface{})
-	for _, payment := range payments {
-		model := payment.(map[string]interface{})
-		totalCost += model["amount"].(float64)
+	clientName := client.getEmailOrName()
+	totalCost := agreement.getTotalCost()
+
+	var userMessage string
+	if messageBytes, ok := body["message"]; ok {
+		json.Unmarshal(*messageBytes, &userMessage)
 	}
 
 	m := mandrill.NewCall()
@@ -90,16 +97,18 @@ func AgreementAccept(params map[string]string, body map[string]interface{}) erro
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
 		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?" + signatureParams},
-		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement["title"].(string)},
+		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement.Title},
 		&mandrill.GlobalVar{Name: "CLIENT_FULLNAME", Content: clientName},
-		&mandrill.GlobalVar{Name: "CLIENT_MESSAGE", Content: userMessage},
-		&mandrill.GlobalVar{Name: "AGREEMENT_NUM_PAYMENTS", Content: strconv.Itoa(len(payments))},
+		&mandrill.GlobalVar{Name: "MESSAGE", Content: userMessage},
+		&mandrill.GlobalVar{Name: "AGREEMENT_NUM_PAYMENTS", Content: strconv.Itoa(len(agreement.Payments))},
 		&mandrill.GlobalVar{Name: "AGREEMENT_COST", Content: fmt.Sprintf("%g", totalCost)},
 	)
-	message.To = []mandrill.To{{Email: freelancer["email"].(string), Name: createFullName(freelancer)}}
-	message.Subject = clientName + " accepted your agreement"
+	for _, mergevar := range vars {
+		message.GlobalMergeVars = append(message.GlobalMergeVars, mergevar)
+	}
+	message.To = []mandrill.To{{Email: freelancer.Email, Name: freelancer.createFullName()}}
 	m.Args["message"] = message
-	m.Args["template_name"] = "Agreement Accept"
+	m.Args["template_name"] = template
 	m.Args["template_content"] = []mandrill.TemplateContent{{Name: "blah", Content: "nfd;jd;fjvnbd"}}
 
 	_, err := m.Send()
@@ -109,81 +118,23 @@ func AgreementAccept(params map[string]string, body map[string]interface{}) erro
 	return nil
 }
 
-func AgreementReject(params map[string]string, body map[string]interface{}) error {
-	agreement := body["agreement"].(map[string]interface{})
-	agreementID := agreement["id"].(string)
-	clientID := agreement["clientID"].(string)
-	freelancerID := agreement["freelancerID"].(string)
-	var userMessage string = " "
-	if msg, ok := body["message"]; ok {
-		userMessage = msg.(string)
-	}
-
-	path := "/agreement/" + agreementID
-	client := getUserInfo(clientID)
-	freelancer := getUserInfo(freelancerID)
-	expiration := 60 * 60 * 24
-	signatureParams := createSignatureParams(freelancerID, path, expiration)
-	clientName := createFullName(client)
-	if clientName == "" {
-		clientName = client["email"].(string)
-	}
-	var totalCost float64
-	payments := agreement["payments"].([]interface{})
-	for _, payment := range payments {
-		model := payment.(map[string]interface{})
-		totalCost += model["amount"].(float64)
-	}
-
-	m := mandrill.NewCall()
-	m.Category = "messages"
-	m.Method = "send-template"
-	message := new(mandrill.Message)
-	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?" + signatureParams},
-		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement["title"].(string)},
-		&mandrill.GlobalVar{Name: "CLIENT_FULLNAME", Content: clientName},
-		&mandrill.GlobalVar{Name: "CLIENT_MESSAGE", Content: userMessage},
-		&mandrill.GlobalVar{Name: "AGREEMENT_NUM_PAYMENTS", Content: strconv.Itoa(len(payments))},
-		&mandrill.GlobalVar{Name: "AGREEMENT_COST", Content: fmt.Sprintf("%g", totalCost)},
-	)
-	message.To = []mandrill.To{{Email: freelancer["email"].(string), Name: createFullName(freelancer)}}
-	message.Subject = clientName + " has Disputed your Request"
-	m.Args["message"] = message
-	m.Args["template_name"] = "Agreement Dispute"
-	m.Args["template_content"] = []mandrill.TemplateContent{{Name: "blah", Content: "nfd;jd;fjvnbd"}}
-
-	_, err := m.Send()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func AgreementChange(params map[string]string, body map[string]interface{}) error {
-	agreement := body["agreement"].(map[string]interface{})
-	agreementID := agreement["id"].(string)
-	clientID := agreement["clientID"].(string)
-	freelancerID := agreement["freelancerID"].(string)
-	var userMessage string = " "
-	if msg, ok := body["message"]; ok {
-		userMessage = msg.(string)
-	}
-
+func agrmntFreelancerSendToClient(body map[string]*json.RawMessage, template string, vars []*mandrill.GlobalVar) error {
+	var agreement *Agreement
+	json.Unmarshal(*body["agreement"], &agreement)
+	agreementID := agreement.ID
+	clientID := agreement.ClientID
+	freelancerID := agreement.FreelancerID
 	path := "/agreement/" + agreementID
 	client := getUserInfo(clientID)
 	freelancer := getUserInfo(freelancerID)
 	expiration := 60 * 60 * 24
 	signatureParams := createSignatureParams(clientID, path, expiration)
-	freelancerName := createFullName(freelancer)
-	if freelancerName == "" {
-		freelancerName = freelancer["email"].(string)
-	}
-	var totalCost float64
-	payments := agreement["payments"].([]interface{})
-	for _, payment := range payments {
-		model := payment.(map[string]interface{})
-		totalCost += model["amount"].(float64)
+	freelancerName := freelancer.getEmailOrName()
+	totalCost := agreement.getTotalCost()
+
+	var userMessage string
+	if messageBytes, ok := body["message"]; ok {
+		json.Unmarshal(*messageBytes, &userMessage)
 	}
 
 	m := mandrill.NewCall()
@@ -192,16 +143,18 @@ func AgreementChange(params map[string]string, body map[string]interface{}) erro
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
 		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?" + signatureParams},
-		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement["title"].(string)},
-		&mandrill.GlobalVar{Name: "USER_FULLNAME", Content: freelancerName},
-		&mandrill.GlobalVar{Name: "CLIENT_MESSAGE", Content: userMessage},
-		&mandrill.GlobalVar{Name: "AGREEMENT_NUM_PAYMENTS", Content: strconv.Itoa(len(payments))},
+		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement.Title},
+		&mandrill.GlobalVar{Name: "FREELANCER_FULLNAME", Content: freelancerName},
+		&mandrill.GlobalVar{Name: "MESSAGE", Content: userMessage},
+		&mandrill.GlobalVar{Name: "AGREEMENT_NUM_PAYMENTS", Content: strconv.Itoa(len(agreement.Payments))},
 		&mandrill.GlobalVar{Name: "AGREEMENT_COST", Content: fmt.Sprintf("%g", totalCost)},
 	)
-	message.To = []mandrill.To{{Email: client["email"].(string), Name: createFullName(client)}}
-	message.Subject = freelancerName + " Requests Changes to Your Agreement"
+	for _, mergevar := range vars {
+		message.GlobalMergeVars = append(message.GlobalMergeVars, mergevar)
+	}
+	message.To = []mandrill.To{{Email: client.Email, Name: client.createFullName()}}
 	m.Args["message"] = message
-	m.Args["template_name"] = "Agreement Change"
+	m.Args["template_name"] = template
 	m.Args["template_content"] = []mandrill.TemplateContent{{Name: "blah", Content: "nfd;jd;fjvnbd"}}
 
 	_, err := m.Send()
@@ -209,4 +162,5 @@ func AgreementChange(params map[string]string, body map[string]interface{}) erro
 		return err
 	}
 	return nil
+
 }

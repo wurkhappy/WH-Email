@@ -30,10 +30,10 @@ var router urlrouter.Router = urlrouter.Router{
 			PathExp: "/user/password/forgot",
 			Dest:    handlers.ForgotPassword,
 		},
-		urlrouter.Route{
-			PathExp: "/agreement/submitted",
-			Dest:    handlers.NewAgreement,
-		},
+		// urlrouter.Route{
+		// 	PathExp: "/agreement/submitted",
+		// 	Dest:    handlers.NewAgreement,
+		// },
 		urlrouter.Route{
 			PathExp: "/agreement/accepted",
 			Dest:    handlers.AgreementAccept,
@@ -102,10 +102,11 @@ func routeMapper(d amqp.Delivery) {
 		return
 	}
 
-	var m map[string]interface{}
+	var m map[string]*json.RawMessage
 	json.Unmarshal(d.Body, &m)
-	body := m["Body"].(map[string]interface{})
-	handler := route.Dest.(func(map[string]string, map[string]interface{}) error)
+	var body map[string]*json.RawMessage
+	json.Unmarshal(*m["Body"], &body)
+	handler := route.Dest.(func(map[string]string, map[string]*json.RawMessage) error)
 	err = handler(params, body)
 	if err != nil {
 		log.Printf("second error is: %v", err)
