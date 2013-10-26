@@ -110,7 +110,7 @@ func routeMapper(d amqp.Delivery) {
 	err = handler(params, body)
 	if err != nil {
 		log.Printf("second error is: %v", err)
-		d.Nack(false, true)
+		d.Nack(false, false)
 	}
 	d.Ack(false)
 }
