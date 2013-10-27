@@ -66,6 +66,10 @@ var router urlrouter.Router = urlrouter.Router{
 			PathExp: "/test",
 			Dest:    handlers.Test,
 		},
+		urlrouter.Route{
+			PathExp: "/comment",
+			Dest:    handlers.SendComment,
+		},
 	},
 }
 

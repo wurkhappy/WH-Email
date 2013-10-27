@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	// "bytes"
+	"bytes"
 	"encoding/json"
-	"github.com/wurkhappy/mandrill-go"
-	// "log"
 	"fmt"
-	// "net/http"
+	"github.com/wurkhappy/mandrill-go"
+	"net/http"
 	"strconv"
 )
 
@@ -70,6 +69,21 @@ func (a *Agreement) getTotalCost() float64 {
 		totalCost += payment.Amount
 	}
 	return totalCost
+}
+
+func getAgreement(versionID string) *Agreement {
+	client := &http.Client{}
+	r, _ := http.NewRequest("GET", "http://localhost:4050/agreements/v/"+versionID, nil)
+	resp, err := client.Do(r)
+	if err != nil {
+		fmt.Printf("Error : %s", err)
+		return nil
+	}
+	clientBuf := new(bytes.Buffer)
+	clientBuf.ReadFrom(resp.Body)
+	var a *Agreement
+	json.Unmarshal(clientBuf.Bytes(), &a)
+	return a
 }
 
 func agrmntClientSendToFreelancer(body map[string]*json.RawMessage, template string, vars []*mandrill.GlobalVar) error {
