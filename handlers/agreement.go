@@ -73,7 +73,7 @@ func (a *Agreement) getTotalCost() float64 {
 
 func getAgreement(versionID string) *Agreement {
 	client := &http.Client{}
-	r, _ := http.NewRequest("GET", "http://localhost:4050/agreements/v/"+versionID, nil)
+	r, _ := http.NewRequest("GET", AgreementService+"/agreements/v/"+versionID, nil)
 	resp, err := client.Do(r)
 	if err != nil {
 		fmt.Printf("Error : %s", err)
@@ -110,7 +110,7 @@ func agrmntClientSendToFreelancer(body map[string]*json.RawMessage, template str
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?" + signatureParams},
+		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: WebServerURI + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement.Title},
 		&mandrill.GlobalVar{Name: "CLIENT_FULLNAME", Content: clientName},
 		&mandrill.GlobalVar{Name: "MESSAGE", Content: userMessage},
@@ -156,7 +156,7 @@ func agrmntFreelancerSendToClient(body map[string]*json.RawMessage, template str
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: "http://localhost:4000" + path + "?" + signatureParams},
+		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: WebServerURI + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement.Title},
 		&mandrill.GlobalVar{Name: "FREELANCER_FULLNAME", Content: freelancerName},
 		&mandrill.GlobalVar{Name: "MESSAGE", Content: userMessage},

@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+var AgreementService string = "http://localhost:4050"
+var WebServerURI string = "http://li241-77.members.linode.com"
+var UserService string = "http://localhost:3000"
+
 func sendRequest(r *http.Request) (map[string]interface{}, []byte) {
 	client := &http.Client{}
 	resp, err := client.Do(r)
@@ -73,8 +77,6 @@ func getEmailOrName(user map[string]interface{}) string {
 
 	return name
 }
-
-
 
 func Test(params map[string]string, body map[string]interface{}) error {
 	time.Sleep(time.Second * 1)

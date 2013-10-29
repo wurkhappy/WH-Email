@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	// "github.com/wurkhappy/mandrill-go"
-	"log"
 	"fmt"
+	"log"
 	"net/http"
 	// "strconv"
 	// "time"
@@ -32,7 +32,7 @@ func getUserInfo(id string) *User {
 		return nil
 	}
 	client := &http.Client{}
-	r, _ := http.NewRequest("GET", "http://localhost:3000/user/search?userid="+id, nil)
+	r, _ := http.NewRequest("GET", UserService+"/user/search?userid="+id, nil)
 	resp, err := client.Do(r)
 	if err != nil {
 		fmt.Printf("Error : %s", err)
