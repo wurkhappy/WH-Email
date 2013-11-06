@@ -92,7 +92,7 @@ func agrmntClientSendToFreelancer(body map[string]*json.RawMessage, template str
 	agreementID := agreement.ID
 	clientID := agreement.ClientID
 	freelancerID := agreement.FreelancerID
-	path := "/agreement/" + agreementID
+	path := "/agreement/v/" + agreementID
 	client := getUserInfo(clientID)
 	freelancer := getUserInfo(freelancerID)
 	expiration := 60 * 60 * 24
@@ -138,7 +138,7 @@ func agrmntFreelancerSendToClient(body map[string]*json.RawMessage, template str
 	agreementID := agreement.ID
 	clientID := agreement.ClientID
 	freelancerID := agreement.FreelancerID
-	path := "/agreement/" + agreementID
+	path := "/agreement/v/" + agreementID
 	client := getUserInfo(clientID)
 	freelancer := getUserInfo(freelancerID)
 	expiration := 60 * 60 * 24
