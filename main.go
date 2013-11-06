@@ -97,6 +97,7 @@ func main() {
 	for d := range deliveries {
 		go routeMapper(d)
 	}
+	log.Print("deliveries ended")
 }
 
 func routeMapper(d amqp.Delivery) {

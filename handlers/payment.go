@@ -53,7 +53,7 @@ func PaymentReject(params map[string]string, body map[string]*json.RawMessage) e
 
 type Payment struct {
 	ID           string    `json:"id"`
-	Amount       float64       `json:"amount"`
+	Amount       float64   `json:"amount"`
 	Title        string    `json:"title"`
 	DateExpected time.Time `json:"dateExpected"`
 }
@@ -63,10 +63,10 @@ func paymentClientSendToFreelancer(body map[string]*json.RawMessage, template st
 	json.Unmarshal(*body["agreement"], &agreement)
 	var payment *Payment
 	json.Unmarshal(*body["payment"], &payment)
-	agreementID := agreement.ID
+	agreementID := agreement.VersionID
 	clientID := agreement.ClientID
 	freelancerID := agreement.FreelancerID
-	path := "/agreement/" + agreementID
+	path := "/agreement/v/" + agreementID
 	client := getUserInfo(clientID)
 	freelancer := getUserInfo(freelancerID)
 	expiration := 60 * 60 * 24
@@ -112,10 +112,10 @@ func paymentFreelancerSendToClient(body map[string]*json.RawMessage, template st
 	json.Unmarshal(*body["agreement"], &agreement)
 	var payment *Payment
 	json.Unmarshal(*body["payment"], &payment)
-	agreementID := agreement.ID
+	agreementID := agreement.VersionID
 	clientID := agreement.ClientID
 	freelancerID := agreement.FreelancerID
-	path := "/agreement/" + agreementID
+	path := "/agreement/v/" + agreementID
 	client := getUserInfo(clientID)
 	freelancer := getUserInfo(freelancerID)
 	expiration := 60 * 60 * 24

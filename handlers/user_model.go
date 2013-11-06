@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	// "github.com/wurkhappy/mandrill-go"
 	"fmt"
-	"log"
+	// "log"
 	"net/http"
 	// "strconv"
 	// "time"
@@ -41,16 +41,13 @@ func getUserInfo(id string) *User {
 	clientBuf.ReadFrom(resp.Body)
 	var users []*User
 	json.Unmarshal(clientBuf.Bytes(), &users)
-	log.Print(clientBuf.String())
 	if len(users) > 0 {
-		log.Printf("user in info is %s", users[0])
 		return users[0]
 	}
 	return nil
 }
 
 func (u *User) createFullName() string {
-	log.Printf("user is %v", u)
 	fName := u.FirstName
 	lName := u.LastName
 	fnOK := fName != ""

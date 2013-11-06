@@ -54,7 +54,8 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 }
 
 type Agreement struct {
-	ID           string     `json:"id" bson:"_id"`
+	AgreementID  string     `json:"agreementID"`
+	VersionID    string     `json:"versionID" bson:"_id"`
 	Version      float64    `json:"version"`
 	ClientID     string     `json:"clientID"`
 	FreelancerID string     `json:"freelancerID"`
@@ -89,7 +90,7 @@ func getAgreement(versionID string) *Agreement {
 func agrmntClientSendToFreelancer(body map[string]*json.RawMessage, template string, vars []*mandrill.GlobalVar) error {
 	var agreement *Agreement
 	json.Unmarshal(*body["agreement"], &agreement)
-	agreementID := agreement.ID
+	agreementID := agreement.VersionID
 	clientID := agreement.ClientID
 	freelancerID := agreement.FreelancerID
 	path := "/agreement/v/" + agreementID
@@ -135,7 +136,7 @@ func agrmntClientSendToFreelancer(body map[string]*json.RawMessage, template str
 func agrmntFreelancerSendToClient(body map[string]*json.RawMessage, template string, vars []*mandrill.GlobalVar) error {
 	var agreement *Agreement
 	json.Unmarshal(*body["agreement"], &agreement)
-	agreementID := agreement.ID
+	agreementID := agreement.VersionID
 	clientID := agreement.ClientID
 	freelancerID := agreement.FreelancerID
 	path := "/agreement/v/" + agreementID
