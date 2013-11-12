@@ -1,12 +1,10 @@
 package handlers
 
 import (
-	// "bytes"
 	"encoding/json"
-	"github.com/wurkhappy/mandrill-go"
-	// "log"
 	"fmt"
-	// "net/http"
+	"github.com/wurkhappy/WH-Config"
+	"github.com/wurkhappy/mandrill-go"
 	"strconv"
 	"time"
 )
@@ -84,7 +82,7 @@ func paymentClientSendToFreelancer(body map[string]*json.RawMessage, template st
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: WebServerURI + path + "?" + signatureParams},
+		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: config.WebServer + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement.Title},
 		&mandrill.GlobalVar{Name: "CLIENT_FULLNAME", Content: clientName},
 		&mandrill.GlobalVar{Name: "MESSAGE", Content: userMessage},
@@ -133,7 +131,7 @@ func paymentFreelancerSendToClient(body map[string]*json.RawMessage, template st
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: WebServerURI + path + "?" + signatureParams},
+		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: config.WebServer + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement.Title},
 		&mandrill.GlobalVar{Name: "FREELANCER_FULLNAME", Content: freelancerName},
 		&mandrill.GlobalVar{Name: "MESSAGE", Content: userMessage},

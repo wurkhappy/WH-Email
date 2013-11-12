@@ -1,11 +1,10 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mandrill-go"
-	"net/http"
 	"strconv"
 )
 
@@ -73,17 +72,13 @@ func (a *Agreement) getTotalCost() float64 {
 }
 
 func getAgreement(versionID string) *Agreement {
-	client := &http.Client{}
-	r, _ := http.NewRequest("GET", AgreementService+"/agreements/v/"+versionID, nil)
-	resp, err := client.Do(r)
-	if err != nil {
-		fmt.Printf("Error : %s", err)
+	resp, statusCode := sendServiceRequest("GET", config.AgreementsService, "/agreements/v/"+versionID, nil)
+	if statusCode >= 400 {
 		return nil
 	}
-	clientBuf := new(bytes.Buffer)
-	clientBuf.ReadFrom(resp.Body)
+
 	var a *Agreement
-	json.Unmarshal(clientBuf.Bytes(), &a)
+	json.Unmarshal(resp, &a)
 	return a
 }
 
@@ -111,7 +106,7 @@ func agrmntClientSendToFreelancer(body map[string]*json.RawMessage, template str
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: WebServerURI + path + "?" + signatureParams},
+		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: config.WebServer + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement.Title},
 		&mandrill.GlobalVar{Name: "CLIENT_FULLNAME", Content: clientName},
 		&mandrill.GlobalVar{Name: "MESSAGE", Content: userMessage},
@@ -157,7 +152,7 @@ func agrmntFreelancerSendToClient(body map[string]*json.RawMessage, template str
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: WebServerURI + path + "?" + signatureParams},
+		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: config.WebServer + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement.Title},
 		&mandrill.GlobalVar{Name: "FREELANCER_FULLNAME", Content: freelancerName},
 		&mandrill.GlobalVar{Name: "MESSAGE", Content: userMessage},

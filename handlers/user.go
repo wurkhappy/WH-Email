@@ -1,13 +1,9 @@
 package handlers
 
 import (
-	// "bytes"
 	"encoding/json"
+	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mandrill-go"
-	// "log"
-	// "fmt"
-	// "net/http"
-	// "strconv"
 	"time"
 )
 
@@ -25,7 +21,7 @@ func ConfirmSignup(params map[string]string, body map[string]*json.RawMessage) e
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "signup_link", Content: WebServerURI + path + "?" + signatureParams},
+		&mandrill.GlobalVar{Name: "signup_link", Content: config.WebServer + path + "?" + signatureParams},
 	)
 	message.To = []mandrill.To{{Email: email, Name: user.createFullName()}}
 	m.Args["message"] = message
@@ -53,7 +49,7 @@ func ForgotPassword(params map[string]string, body map[string]*json.RawMessage) 
 	m.Method = "send-template"
 	message := new(mandrill.Message)
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "PASSWORD_RESET_LINK", Content: WebServerURI + path + "?" + signatureParams},
+		&mandrill.GlobalVar{Name: "PASSWORD_RESET_LINK", Content: config.WebServer + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "USER_FULLNAME", Content: user.createFullName()},
 	)
 	message.To = []mandrill.To{{Email: email, Name: user.createFullName()}}

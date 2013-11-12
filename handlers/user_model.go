@@ -1,14 +1,8 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
-	// "github.com/wurkhappy/mandrill-go"
-	"fmt"
-	// "log"
-	"net/http"
-	// "strconv"
-	// "time"
+	"github.com/wurkhappy/WH-Config"
 )
 
 type User struct {
@@ -31,16 +25,12 @@ func getUserInfo(id string) *User {
 	if id == "" {
 		return nil
 	}
-	client := &http.Client{}
-	r, _ := http.NewRequest("GET", UserService+"/user/search?userid="+id, nil)
-	resp, err := client.Do(r)
-	if err != nil {
-		fmt.Printf("Error : %s", err)
+	resp, statusCode := sendServiceRequest("GET", config.UserService, "/user/search?userid="+id, nil)
+	if statusCode >= 400 {
+		return nil
 	}
-	clientBuf := new(bytes.Buffer)
-	clientBuf.ReadFrom(resp.Body)
 	var users []*User
-	json.Unmarshal(clientBuf.Bytes(), &users)
+	json.Unmarshal(resp, &users)
 	if len(users) > 0 {
 		return users[0]
 	}

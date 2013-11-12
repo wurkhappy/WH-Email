@@ -1,30 +1,35 @@
 package handlers
 
 import (
-	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/nu7hatch/gouuid"
+	"github.com/wurkhappy/mdp"
 	"log"
-	"net/http"
 	"time"
 )
 
-var AgreementService string = "http://localhost:4050"
-var WebServerURI string = "http://li241-77.members.linode.com"
-var UserService string = "http://localhost:3000"
+type ServiceResp struct {
+	StatusCode float64 `json:"status_code"`
+	Body       []byte  `json:"body"`
+}
 
-func sendRequest(r *http.Request) (map[string]interface{}, []byte) {
-	client := &http.Client{}
-	resp, err := client.Do(r)
-	if err != nil {
-		fmt.Printf("Error : %s", err)
+func sendServiceRequest(method, service, path string, body []byte) (response []byte, statusCode int) {
+	client := mdp.NewClient("tcp://localhost:5555", false)
+	defer client.Close()
+	m := map[string]interface{}{
+		"Method": method,
+		"Path":   path,
+		"Body":   body,
 	}
-	respBuf := new(bytes.Buffer)
-	respBuf.ReadFrom(resp.Body)
-	var respData map[string]interface{}
-	json.Unmarshal(respBuf.Bytes(), &respData)
-	return respData, respBuf.Bytes()
+	req, _ := json.Marshal(m)
+	request := [][]byte{req}
+	reply := client.Send([]byte(service), request)
+	if len(reply) == 0 {
+		return nil, 404
+	}
+	resp := new(ServiceResp)
+	json.Unmarshal(reply[0], &resp)
+	return resp.Body, int(resp.StatusCode)
 }
 
 func createFullName(user map[string]interface{}) string {
