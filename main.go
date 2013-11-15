@@ -7,15 +7,14 @@ import (
 	"github.com/ant0ine/go-urlrouter"
 	"github.com/streadway/amqp"
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
+	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/handlers"
 	"log"
 )
 
 var (
-	uri          = flag.String("uri", "amqp://guest:guest@localhost:5672/", "AMQP URI")
-	exchange     = flag.String("exchange", "email", "Durable, non-auto-deleted AMQP exchange name")
+	production   = flag.Bool("production", false, "Production settings")
 	exchangeType = flag.String("exchange-type", "direct", "Exchange type - direct|fanout|topic|x-custom")
-	queue        = flag.String("queue", "email", "Ephemeral AMQP queue name")
 	consumerTag  = flag.String("consumer-tag", "simple-consumer", "AMQP consumer tag (should not be blank)")
 )
 
@@ -73,22 +72,24 @@ var router urlrouter.Router = urlrouter.Router{
 	},
 }
 
-func init() {
-	flag.Parse()
-}
-
 func main() {
-	log.Printf("dialing %q", *uri)
-	conn, err := amqp.Dial(*uri)
+	flag.Parse()
+	if *production {
+		config.Prod()
+	} else {
+		config.Test()
+	}
+	handlers.Setup()
+	conn, err := amqp.Dial(config.EmailBroker)
 	if err != nil {
 		fmt.Errorf("Dial: %s", err)
 	}
-	c, err := rbtmq.NewConsumer(conn, *exchange, *exchangeType, *queue, *consumerTag)
+	c, err := rbtmq.NewConsumer(conn, config.EmailExchange, *exchangeType, config.EmailQueue, *consumerTag)
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
 
-	deliveries := c.Consume(*queue)
+	deliveries := c.Consume(config.EmailQueue)
 
 	err = router.Start()
 	if err != nil {

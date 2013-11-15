@@ -2,15 +2,17 @@ package handlers
 
 import (
 	"github.com/garyburd/redigo/redis"
+	"github.com/wurkhappy/WH-Config"
 	"time"
 )
 
 var redisPool *redis.Pool
 
-func init() {
+func Setup() {
 	var password string
 	var network string = "tcp"
-	var address string = ":6379"
+	var address string = config.WebAppRedis
+
 	redisPool = &redis.Pool{
 		MaxIdle:     10,
 		IdleTimeout: 240 * time.Second,

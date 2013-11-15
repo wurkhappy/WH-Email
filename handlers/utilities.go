@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/nu7hatch/gouuid"
+	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mdp"
 	"log"
 	"time"
@@ -14,7 +15,7 @@ type ServiceResp struct {
 }
 
 func sendServiceRequest(method, service, path string, body []byte) (response []byte, statusCode int) {
-	client := mdp.NewClient("tcp://localhost:5555", false)
+	client := mdp.NewClient(config.MDPBroker, false)
 	defer client.Close()
 	m := map[string]interface{}{
 		"Method": method,
