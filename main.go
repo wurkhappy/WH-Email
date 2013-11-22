@@ -9,6 +9,7 @@ import (
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/handlers"
+	"github.com/wurkhappy/mandrill-go"
 	"log"
 )
 
@@ -76,8 +77,10 @@ func main() {
 	flag.Parse()
 	if *production {
 		config.Prod()
+		mandrill.APIkey = "tKcqIfanhMnYrTtGrDixBA"
 	} else {
 		config.Test()
+		mandrill.APIkey = "AiZeQTNtBDY4omKvajApkg"
 	}
 	handlers.Setup()
 	conn, err := amqp.Dial(config.EmailBroker)

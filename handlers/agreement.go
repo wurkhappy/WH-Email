@@ -8,10 +8,6 @@ import (
 	"strconv"
 )
 
-func init() {
-	mandrill.APIkey = "AiZeQTNtBDY4omKvajApkg"
-}
-
 func NewAgreement(params map[string]string, body map[string]*json.RawMessage) error {
 	template := "Agreement New User"
 	vars := make([]*mandrill.GlobalVar, 0)
