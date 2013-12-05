@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/url"
+		"github.com/garyburd/redigo/redis"
 )
 
 func ProcessReply(params map[string]string, body map[string]*json.RawMessage) error {
@@ -16,12 +17,18 @@ func ProcessReply(params map[string]string, body map[string]*json.RawMessage) er
 	s = s[16:]
 	var m []map[string]interface{}
 	json.Unmarshal([]byte(s), &m)
-	to := m[0]["msg"].(map[string]interface{})["to"]
-	fmt.Println(to[6:])
+	to := m[0]["msg"].(map[string]interface{})["to"].([]interface{})
+	t := to[0]
+	toString := t.([]interface{})[0].(string)
+	message_id := toString[6:42]
+	fmt.Println(message_id)
 	msg := m[0]["msg"].(map[string]interface{})["html"]
 	r := bytes.NewReader([]byte(msg.(string)))
 	comment := parseHtml(r)
 	fmt.Println(comment)
+
+	commentBytes := redis.Bytes(c.Send("GET", message_id))
+	fmt.Println(string(commentBytes))
 	return nil
 }
 
