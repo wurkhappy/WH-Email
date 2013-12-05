@@ -64,7 +64,8 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	}
 	c := redisPool.Get()
 	fmt.Println(message_id.String())
-	if err := c.Send("SET", message_id.String(), *body["comment"]); err != nil {
+	jsonComment, _ := json.Marshal(comment)	
+	if _, err := c.Do("SET", message_id.String(), jsonComment); err != nil {
 		log.Panic(err)
 	}
 	return nil
