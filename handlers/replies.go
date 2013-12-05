@@ -16,7 +16,12 @@ func ProcessReply(params map[string]string, body map[string]*json.RawMessage) er
 	s = s[16:]
 	var m []map[string]interface{}
 	json.Unmarshal([]byte(s), &m)
-	fmt.Println(m)
+	to := m[0]["msg"].(map[string]interface{})["to"].([]interface{})
+	t := to[0]
+	toString := t.([]interface{})[0].(string)
+	message_id := toString[6:42]
+	fmt.Println(message_id)
+	
 	msg := m[0]["msg"].(map[string]interface{})["html"]
 	r := bytes.NewReader([]byte(msg.(string)))
 	comment := parseHtml(r)
