@@ -45,6 +45,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	m.Category = "messages"
 	m.Method = "send-template"
 	message := new(mandrill.Message)
+	message.FromEmail = "reply-"+message_id.String()+"@notification.wurkhappy.com"
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
 		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: config.WebServer + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement.Title},
