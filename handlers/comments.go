@@ -29,7 +29,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	var comment *Comment
 	json.Unmarshal(*body["comment"], &comment)
 	sender := getUserInfo(comment.UserID)
-	agreement := getAgreement(comment.AgreementVersionID)
+	agreement := getAgreementOwners(comment.AgreementID)
 	var recipientID string = agreement.ClientID
 	if agreement.ClientID == comment.UserID {
 		recipientID = agreement.FreelancerID

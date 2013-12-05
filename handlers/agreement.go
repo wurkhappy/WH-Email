@@ -67,17 +67,6 @@ func (a *Agreement) getTotalCost() float64 {
 	return totalCost
 }
 
-func getAgreement(versionID string) *Agreement {
-	resp, statusCode := sendServiceRequest("GET", config.AgreementsService, "/agreements/v/"+versionID, nil)
-	if statusCode >= 400 {
-		return nil
-	}
-
-	var a *Agreement
-	json.Unmarshal(resp, &a)
-	return a
-}
-
 func agrmntClientSendToFreelancer(body map[string]*json.RawMessage, template string, vars []*mandrill.GlobalVar) error {
 	var agreement *Agreement
 	json.Unmarshal(*body["agreement"], &agreement)

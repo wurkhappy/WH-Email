@@ -89,3 +89,24 @@ func Test(params map[string]string, body map[string]interface{}) error {
 	log.Print(body)
 	return nil
 }
+
+func getAgreement(versionID string) *Agreement {
+	resp, statusCode := sendServiceRequest("GET", config.AgreementsService, "/agreements/v/"+versionID, nil)
+	if statusCode >= 400 {
+		return nil
+	}
+
+	var a *Agreement
+	json.Unmarshal(resp, &a)
+	return a
+}
+
+func getAgreementOwners(agreementID string) *Agreement {
+	resp, statusCode := sendServiceRequest("GET", config.AgreementsService, "/agreements/"+agreementID+"/owners", nil)
+	if statusCode >= 400 {
+		return nil
+	}
+	var a *Agreement
+	json.Unmarshal(resp, &a)
+	return a
+}
