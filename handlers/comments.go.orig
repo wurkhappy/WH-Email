@@ -13,7 +13,6 @@ import (
 type Comment struct {
 	ID                 string    `json:"id"`
 	UserID             string    `json:"userID"`
-	RecipientID        string    `json:"recipientID"` //not part of the original model but we need this info for the reply email
 	AgreementID        string    `json:"agreementID"`
 	AgreementVersionID string    `json:"agreementVersionID"`
 	DateCreated        time.Time `json:"dateCreated"`
@@ -46,7 +45,11 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	m.Category = "messages"
 	m.Method = "send-template"
 	message := new(mandrill.Message)
-	message.FromEmail = "reply-" + message_id.String() + "@notifications.wurkhappy.com"
+<<<<<<< HEAD
+	message.FromEmail = "reply-"+message_id.String()+"@notification.wurkhappy.com"
+=======
+	message.FromEmail = "reply-"+message_id.String()+"@notifications.wurkhappy.com"
+>>>>>>> 6fc94987c446250d1f80b94e36609e9baa5973c2
 	message.GlobalMergeVars = append(message.GlobalMergeVars,
 		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: config.WebServer + path + "?" + signatureParams},
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement.Title},
@@ -65,9 +68,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	}
 	c := redisPool.Get()
 	fmt.Println(message_id.String())
-	comment.RecipientID = recipientID
-	jsonComment, _ := json.Marshal(comment)
-	if _, err := c.Do("SET", message_id.String(), jsonComment); err != nil {
+	if err := c.Send("SET", message_id.String(), *body["comment"]); err != nil {
 		log.Panic(err)
 	}
 	return nil
