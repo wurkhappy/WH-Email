@@ -5,6 +5,7 @@ import (
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mandrill-go"
 	"time"
+	"fmt"
 )
 
 func ConfirmSignup(params map[string]string, body map[string]*json.RawMessage) error {
@@ -24,13 +25,18 @@ func ConfirmSignup(params map[string]string, body map[string]*json.RawMessage) e
 		&mandrill.GlobalVar{Name: "signup_link", Content: config.WebServer + path + "?" + signatureParams},
 	)
 	message.To = []mandrill.To{{Email: email, Name: user.createFullName()}}
+	message.Tags = []string{"test", "userid"}
+	mp := map[string]string{
+		"userid": "123",
+	}
+	message.Metadata = []map[string]string{mp}
 	m.Args["message"] = message
 	m.Args["template_name"] = "Confirm Email and Signup"
 	m.Args["template_content"] = []mandrill.TemplateContent{{Name: "blah", Content: "nfd;jd;fjvnbd"}}
 
 	_, err := m.Send()
 	if err != nil {
-		return err
+		return fmt.Errorf("%s", err.Message)
 	}
 	return nil
 }
@@ -59,7 +65,7 @@ func ForgotPassword(params map[string]string, body map[string]*json.RawMessage) 
 
 	_, err := m.Send()
 	if err != nil {
-		return err
+		return fmt.Errorf("%s", err.Message)
 	}
 	return nil
 }

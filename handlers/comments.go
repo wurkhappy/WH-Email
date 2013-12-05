@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mandrill-go"
 	"time"
+	"log"
 )
 
 type Comment struct {
@@ -14,8 +16,13 @@ type Comment struct {
 	AgreementVersionID string    `json:"agreementVersionID"`
 	DateCreated        time.Time `json:"dateCreated"`
 	Text               string    `json:"text"`
-	MilestoneID        string    `json:"milestoneID"`
-	StatusID           string    `json:"statusID"`
+	Tags               []*Tag    `json:"tags"`
+}
+
+type Tag struct {
+	ID          string `json:"id"`
+	AgreementID string `json:"agreementID"`
+	Name        string `json:"name"`
 }
 
 func SendComment(params map[string]string, body map[string]*json.RawMessage) error {
@@ -47,9 +54,15 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	m.Args["template_name"] = "New Message"
 	m.Args["template_content"] = []mandrill.TemplateContent{{Name: "blah", Content: "nfd;jd;fjvnbd"}}
 
-	_, err := m.Send()
+	resp, err := m.Send()
 	if err != nil {
-		return err
+		return fmt.Errorf("%s", err.Message)
+	}
+	c := redisPool.Get()
+	r := resp[0]
+	fmt.Println(r.ID)
+	if err := c.Send("SET", r.ID, *body["comment"]); err != nil {
+		log.Panic(err)
 	}
 	return nil
 }

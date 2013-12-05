@@ -119,7 +119,7 @@ func agrmntClientSendToFreelancer(body map[string]*json.RawMessage, template str
 
 	_, err := m.Send()
 	if err != nil {
-		return err
+		return fmt.Errorf("%s", err.Message)
 	}
 	return nil
 }
@@ -165,7 +165,7 @@ func agrmntFreelancerSendToClient(body map[string]*json.RawMessage, template str
 
 	_, err := m.Send()
 	if err != nil {
-		return err
+		return fmt.Errorf("%s", err.Message)
 	}
 	return nil
 
