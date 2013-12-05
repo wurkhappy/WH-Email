@@ -3,10 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mandrill-go"
-	"time"
 	"log"
+	"time"
 )
 
 type Comment struct {
@@ -26,6 +27,7 @@ type Tag struct {
 }
 
 func SendComment(params map[string]string, body map[string]*json.RawMessage) error {
+	message_id, _ := uuid.NewV4()
 	var comment *Comment
 	json.Unmarshal(*body["comment"], &comment)
 	sender := getUserInfo(comment.UserID)
@@ -48,20 +50,20 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement.Title},
 		&mandrill.GlobalVar{Name: "SENDER_FULLNAME", Content: sender.getEmailOrName()},
 		&mandrill.GlobalVar{Name: "MESSAGE", Content: comment.Text},
+		&mandrill.GlobalVar{Name: "MESSAGE_ID", Content: message_id.String()},
 	)
 	message.To = []mandrill.To{{Email: recipient.Email, Name: recipient.createFullName()}}
 	m.Args["message"] = message
 	m.Args["template_name"] = "New Message"
 	m.Args["template_content"] = []mandrill.TemplateContent{{Name: "blah", Content: "nfd;jd;fjvnbd"}}
 
-	resp, err := m.Send()
+	_, err := m.Send()
 	if err != nil {
 		return fmt.Errorf("%s", err.Message)
 	}
 	c := redisPool.Get()
-	r := resp[0]
-	fmt.Println(r.ID)
-	if err := c.Send("SET", r.ID, *body["comment"]); err != nil {
+	fmt.Println(message_id.String())
+	if err := c.Send("SET", message_id.String(), *body["comment"]); err != nil {
 		log.Panic(err)
 	}
 	return nil
