@@ -40,7 +40,7 @@ func ProcessReply(params map[string]string, body map[string]*json.RawMessage) er
 	fmt.Println(newComment)
 
 	newCommentjson, _ := json.Marshal(newComment)
-	resp, statusCode := sendServiceRequest("POST", config.CommentsService, "/agreement/"+comment.AgreementID+"/comments", newCommentjson)
+	_, statusCode := sendServiceRequest("POST", config.CommentsService, "/agreement/"+comment.AgreementID+"/comments", newCommentjson)
 	if statusCode >= 400 {
 		return nil
 	}

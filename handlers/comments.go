@@ -11,7 +11,7 @@ import (
 )
 
 type Comment struct {
-	ID                 string    `json:"id"`
+	ID                 string    `json:"id,omitempty"`
 	UserID             string    `json:"userID"`
 	RecipientID        string    `json:"recipientID"` //not part of the original model but we need this info for the reply email
 	AgreementID        string    `json:"agreementID"`
