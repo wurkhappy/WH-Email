@@ -11,6 +11,7 @@ import (
 	"github.com/wurkhappy/WH-Email/handlers"
 	"github.com/wurkhappy/mandrill-go"
 	"log"
+	"html/template"
 )
 
 var (
@@ -86,6 +87,7 @@ func main() {
 		config.Test()
 		mandrill.APIkey = "AiZeQTNtBDY4omKvajApkg"
 	}
+	template.ParseFiles("templates/*")
 	handlers.Setup()
 	conn, err := amqp.Dial(config.EmailBroker)
 	if err != nil {

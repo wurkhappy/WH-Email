@@ -1,0 +1,59 @@
+{{define "invoice"}}
+<table style="border-spacing:0;width:100%;font-size:12px; border:1px solid #ddd; padding:10px;border-radius:5px;margin-top:20px;box-shadow:inset 0px 0px 2px rgb(0,0,0);">
+  <tbody>
+
+    <tr>
+      <td colspan="3" style="text-align: center;font-size:16px;border-top:1px solid #ddd;border-bottom:1px solid #ddd; padding-top:3px; padding-bottom:3px;font-weight:bold;">INVOICE FOR {{.AGREEMENT_MILESTONE}}</td>
+    </tr>
+    <tr>
+      <td style="height:10px;"></td>
+    </tr>
+    <tr>
+      <td style="font-weight:bold;">From:</td>
+      <td style="text-align:right;font-weight:bold;">Invoice Date:</td>
+    </tr>
+
+    <tr>
+      <td>{{.FREELANCER_FULLNAME}}</td>
+      <td style="text-align:right;">{{.PAYMENT_REQUESTED_DATE}}</td>
+    </tr>
+    <tr style="height:10px;">
+    </tr>
+    <tr>
+      <td style="font-weight:bold;">To:</td>
+
+    </tr>
+    <tr>
+      <td>{{.CLIENT_FULLNAME}}</td>
+    </tr>
+
+<tr>
+  <td>{{.CLIENT_PHONE}}</td>
+  <td style="text-align:right;font-weight:bold;"></td>
+  <td style="text-align:right;"></td>
+</tr>
+<tr>
+  <td style="height:20px;"></td>
+</tr>
+{{if .WORK_ITEMS}}
+<tr>
+  <td style="font-weight:bold;">Work items included in this milestone:</td>
+</tr>
+{{end}}
+{{range .WORK_ITEMS}}
+<tr>
+  <td>{{.Text}}</td>
+</tr>
+{{end}}
+<tr style="height:10px;">
+</tr>
+<tr>
+  <td></td>
+  <td style="font-weight:bold;font-size:18px;text-align:right;">Milestone Total:</td>
+  <td style="font-weight:bold;font-size:18px;text-align:right;">${{.PAYMENT_AMOUNT}}</td>
+</tr>
+<tr style="height:10px;">
+</tr>
+</tbody>
+</table>
+{{end}}
