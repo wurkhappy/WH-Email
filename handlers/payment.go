@@ -58,10 +58,10 @@ func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) 
 	m.Category = "messages"
 	m.Method = "send"
 	message := new(mandrill.Message)
-	message.To = []mandrill.To{{Email: freelancer.Email, Name: freelancer.createFullName()}}
+	message.To = []mandrill.To{{Email: client.Email, Name: client.createFullName()}}
 	message.FromEmail = "notifications@wurkhappy.com"
 	message.FromName = "Wurk Happy"
-	message.Subject = clientName + " requests payment"
+	message.Subject = freelancer.getEmailOrName() + " requests payment"
 	message.Html = html.String()
 	message.Attachments = append(message.Attachments, &mandrill.Attachment{Type: "application/pdf", Name: "Invoice.pdf", Content: attachment})
 	m.Args["message"] = message
