@@ -22,22 +22,19 @@ func ProcessReply(params map[string]string, body map[string]*json.RawMessage) er
 	t := to[0]
 	toString := t.([]interface{})[0].(string)
 	message_id := toString[6:42]
-	fmt.Println(message_id)
 	msg := m[0]["msg"].(map[string]interface{})["html"]
+	fmt.Println(msg)
 	r := bytes.NewReader([]byte(msg.(string)))
 	text := parseHtml(r)
-	fmt.Println(text)
 	c := redisPool.Get()
 	commentBytes, _ := redis.Bytes(c.Do("GET", message_id))
 	var comment *Comment
 	json.Unmarshal(commentBytes, &comment)
-	fmt.Println(comment)
 	newComment := new(Comment)
 	newComment.AgreementID = comment.AgreementID
 	newComment.Tags = comment.Tags
 	newComment.Text = text
 	newComment.UserID = comment.RecipientID
-	fmt.Println(newComment)
 
 	newCommentjson, _ := json.Marshal(newComment)
 	_, statusCode := sendServiceRequest("POST", config.CommentsService, "/agreement/"+comment.AgreementID+"/comments", newCommentjson)
