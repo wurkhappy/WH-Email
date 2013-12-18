@@ -1,14 +1,25 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Config"
-	"github.com/wurkhappy/mandrill-go"
+	"github.com/wurkhappy/WH-Email/models"
+	"html/template"
 	"log"
 	"time"
 )
+
+var newMessageTpl *template.Template
+
+func init() {
+	newMessageTpl = template.Must(template.ParseFiles(
+		"templates/base.html",
+		"templates/new_message.html",
+	))
+}
 
 type Comment struct {
 	ID                 string    `json:"id,omitempty"`
@@ -42,26 +53,27 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	path := "/agreement/v/" + comment.AgreementVersionID
 	expiration := int(time.Now().Add(time.Hour * 24 * 5).Unix())
 	signatureParams := createSignatureParams(recipientID, path, expiration)
-	m := mandrill.NewCall()
-	m.Category = "messages"
-	m.Method = "send-template"
-	message := new(mandrill.Message)
-	message.FromEmail = "reply-" + message_id.String() + "@notifications.wurkhappy.com"
-	message.GlobalMergeVars = append(message.GlobalMergeVars,
-		&mandrill.GlobalVar{Name: "AGREEMENT_LINK", Content: config.WebServer + path + "?" + signatureParams},
-		&mandrill.GlobalVar{Name: "AGREEMENT_NAME", Content: agreement.Title},
-		&mandrill.GlobalVar{Name: "SENDER_FULLNAME", Content: sender.getEmailOrName()},
-		&mandrill.GlobalVar{Name: "MESSAGE", Content: comment.Text},
-		&mandrill.GlobalVar{Name: "MESSAGE_ID", Content: message_id.String()},
-	)
-	message.To = []mandrill.To{{Email: recipient.Email, Name: recipient.createFullName()}}
-	m.Args["message"] = message
-	m.Args["template_name"] = "New Message"
-	m.Args["template_content"] = []mandrill.TemplateContent{{Name: "blah", Content: "nfd;jd;fjvnbd"}}
 
-	_, err := m.Send()
+	data := map[string]interface{}{
+		"AGREEMENT_LINK":  config.WebServer + path + "?" + signatureParams,
+		"AGREEMENT_NAME":  agreement.Title,
+		"SENDER_FULLNAME": sender.getEmailOrName(),
+		"MESSAGE":         comment.Text,
+		"MESSAGE_ID":      message_id.String(),
+	}
+	var html bytes.Buffer
+	newAgreementTpl.Execute(&html, data)
+
+	mail := new(models.Mail)
+	mail.To = []models.To{{Email: recipient.Email, Name: recipient.createFullName()}}
+	mail.FromEmail = "reply-" + message_id.String() + "@notifications.wurkhappy.com"
+	mail.FromName = "Wurk Happy"
+	mail.Subject = sender.getEmailOrName() + " Has Just Sent You A New Message"
+	mail.Html = html.String()
+
+	err := mail.Send()
 	if err != nil {
-		return fmt.Errorf("%s", err.Message)
+		return err
 	}
 	c := redisPool.Get()
 	fmt.Println(message_id.String())

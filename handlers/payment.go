@@ -15,6 +15,9 @@ import (
 
 var paymentRequestTpl *template.Template
 var invoiceTpl *template.Template
+var paymentReceivedTpl *template.Template
+var paymentSentTpl *template.Template
+var paymentDisputeTpl *template.Template
 
 func init() {
 	paymentRequestTpl = template.Must(template.ParseFiles(
@@ -24,6 +27,18 @@ func init() {
 	))
 	invoiceTpl = template.Must(template.ParseFiles(
 		"templates/invoice.html",
+	))
+	paymentReceivedTpl = template.Must(template.ParseFiles(
+		"templates/base.html",
+		"templates/payment_received.html",
+	))
+	paymentSentTpl = template.Must(template.ParseFiles(
+		"templates/base.html",
+		"templates/payment_sent.html",
+	))
+	paymentDisputeTpl = template.Must(template.ParseFiles(
+		"templates/base.html",
+		"templates/payment_dispute.html",
 	))
 }
 
@@ -59,33 +74,79 @@ func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) 
 }
 
 func PaymentAccepted(params map[string]string, body map[string]*json.RawMessage) error {
-	template := "Payment Received"
-	vars := make([]*mandrill.GlobalVar, 0)
-	err := paymentClientSendToFreelancer(body, template, vars)
-	if err != nil {
-		return err
+	var agreement *Agreement
+	json.Unmarshal(*body["agreement"], &agreement)
+	var payment *Payment
+	json.Unmarshal(*body["payment"], &payment)
+	var message string
+	if messageBytes, ok := body["message"]; ok {
+		json.Unmarshal(*messageBytes, &message)
 	}
-	return nil
+
+	data := createPaymentData(agreement, payment, message)
+
+	var html bytes.Buffer
+	paymentReceivedTpl.Execute(&html, data)
+
+	mail := new(models.Mail)
+	mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
+	mail.FromEmail = "reply@notifications.wurkhappy.com"
+	mail.FromName = "Wurk Happy"
+	mail.Subject = data["CLIENT_FULLNAME"].(string) + " Just Paid You"
+	mail.Html = html.String()
+
+	return mail.Send()
 }
 
 func PaymentSent(params map[string]string, body map[string]*json.RawMessage) error {
-	template := "Payment Sent"
-	vars := make([]*mandrill.GlobalVar, 0)
-	err := paymentClientSendToFreelancer(body, template, vars)
-	if err != nil {
-		return err
+	var agreement *Agreement
+	json.Unmarshal(*body["agreement"], &agreement)
+	var payment *Payment
+	json.Unmarshal(*body["payment"], &payment)
+	var message string
+	if messageBytes, ok := body["message"]; ok {
+		json.Unmarshal(*messageBytes, &message)
 	}
-	return nil
+
+	data := createPaymentData(agreement, payment, message)
+
+	var html bytes.Buffer
+	paymentSentTpl.Execute(&html, data)
+
+	mail := new(models.Mail)
+	mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
+	mail.FromEmail = "reply@notifications.wurkhappy.com"
+	mail.FromName = "Wurk Happy"
+	mail.Subject = "You just paid " + data["FREELANCER_FULLNAME"].(string)
+	mail.Html = html.String()
+
+	return mail.Send()
+
 }
 
 func PaymentReject(params map[string]string, body map[string]*json.RawMessage) error {
-	template := "Payment Dispute"
-	vars := make([]*mandrill.GlobalVar, 0)
-	err := paymentClientSendToFreelancer(body, template, vars)
-	if err != nil {
-		return err
+	var agreement *Agreement
+	json.Unmarshal(*body["agreement"], &agreement)
+	var payment *Payment
+	json.Unmarshal(*body["payment"], &payment)
+	var message string
+	if messageBytes, ok := body["message"]; ok {
+		json.Unmarshal(*messageBytes, &message)
 	}
-	return nil
+
+	data := createPaymentData(agreement, payment, message)
+
+	var html bytes.Buffer
+	paymentDisputeTpl.Execute(&html, data)
+
+	mail := new(models.Mail)
+	mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
+	mail.FromEmail = "reply@notifications.wurkhappy.com"
+	mail.FromName = "Wurk Happy"
+	mail.Subject = data["CLIENT_FULLNAME"].(string) + " Has Disputed Your Request"
+	mail.Html = html.String()
+
+	return mail.Send()
 }
 
 type Payment struct {
