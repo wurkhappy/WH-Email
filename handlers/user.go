@@ -37,7 +37,7 @@ func ConfirmSignup(params map[string]string, body map[string]*json.RawMessage) e
 		"signup_link": config.WebServer + path + "?" + signatureParams,
 	}
 	var html bytes.Buffer
-	confirmSignupTpl.Execute(&html, data)
+	confirmSignupTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: email, Name: user.createFullName()}}
@@ -64,7 +64,7 @@ func ForgotPassword(params map[string]string, body map[string]*json.RawMessage) 
 		"USER_FULLNAME":       user.createFullName(),
 	}
 	var html bytes.Buffer
-	confirmSignupTpl.Execute(&html, data)
+	confirmSignupTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: email, Name: user.createFullName()}}

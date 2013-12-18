@@ -60,7 +60,7 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 	data := createAgreementData(agreement, message)
 
 	var html bytes.Buffer
-	newAgreementTpl.Execute(&html, data)
+	newAgreementTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	if agreement.DraftCreatorID == agreement.FreelancerID {
@@ -87,7 +87,7 @@ func AgreementChange(params map[string]string, body map[string]*json.RawMessage)
 	data := createAgreementData(agreement, message)
 
 	var html bytes.Buffer
-	agreementChangeTpl.Execute(&html, data)
+	agreementChangeTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
@@ -110,7 +110,7 @@ func AgreementAccept(params map[string]string, body map[string]*json.RawMessage)
 	data := createAgreementData(agreement, message)
 
 	var html bytes.Buffer
-	agreementAcceptTpl.Execute(&html, data)
+	agreementAcceptTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
@@ -133,7 +133,7 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 	data := createAgreementData(agreement, message)
 
 	var html bytes.Buffer
-	agreementDisputeTpl.Execute(&html, data)
+	agreementDisputeTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}

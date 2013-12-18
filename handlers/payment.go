@@ -55,12 +55,12 @@ func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) 
 	data := createPaymentData(agreement, payment, message)
 
 	var invoiceHTML bytes.Buffer
-	invoiceTpl.Execute(&invoiceHTML, data)
+	invoiceTpl.ExecuteTemplate(&html, "base", data)
 	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", []byte(invoiceHTML.String()))
 	attachment := base64.StdEncoding.EncodeToString(pdfResp)
 
 	var html bytes.Buffer
-	paymentRequestTpl.Execute(&html, data)
+	paymentRequestTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
@@ -86,7 +86,7 @@ func PaymentAccepted(params map[string]string, body map[string]*json.RawMessage)
 	data := createPaymentData(agreement, payment, message)
 
 	var html bytes.Buffer
-	paymentReceivedTpl.Execute(&html, data)
+	paymentReceivedTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
@@ -111,7 +111,7 @@ func PaymentSent(params map[string]string, body map[string]*json.RawMessage) err
 	data := createPaymentData(agreement, payment, message)
 
 	var html bytes.Buffer
-	paymentSentTpl.Execute(&html, data)
+	paymentSentTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
@@ -137,7 +137,7 @@ func PaymentReject(params map[string]string, body map[string]*json.RawMessage) e
 	data := createPaymentData(agreement, payment, message)
 
 	var html bytes.Buffer
-	paymentDisputeTpl.Execute(&html, data)
+	paymentDisputeTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}

@@ -62,7 +62,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 		"MESSAGE_ID":      message_id.String(),
 	}
 	var html bytes.Buffer
-	newAgreementTpl.Execute(&html, data)
+	newAgreementTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.createFullName()}}
