@@ -55,7 +55,7 @@ func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) 
 	data := createPaymentData(agreement, payment, message)
 
 	var invoiceHTML bytes.Buffer
-	invoiceTpl.ExecuteTemplate(&html, "base", data)
+	invoiceTpl.ExecuteTemplate(&invoiceHTML, "invoice", data)
 	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", []byte(invoiceHTML.String()))
 	attachment := base64.StdEncoding.EncodeToString(pdfResp)
 
