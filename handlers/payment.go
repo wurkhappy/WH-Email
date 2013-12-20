@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"bytes"
-	"encoding/base64"
+	// "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/wurkhappy/WH-Config"
@@ -56,10 +56,7 @@ func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) 
 
 	var invoiceHTML bytes.Buffer
 	invoiceTpl.ExecuteTemplate(&invoiceHTML, "invoice", data)
-	fmt.Print(invoiceHTML.String())
 	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", []byte(invoiceHTML.String()))
-	fmt.Print(string(pdfResp))
-	attachment := base64.StdEncoding.EncodeToString(pdfResp)
 
 	var html bytes.Buffer
 	paymentRequestTpl.ExecuteTemplate(&html, "base", data)
@@ -70,7 +67,7 @@ func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) 
 	mail.FromName = "Wurk Happy"
 	mail.Subject = data["FREELANCER_FULLNAME"].(string) + " requests payment"
 	mail.Html = html.String()
-	mail.Attachments = append(mail.Attachments, &models.Attachment{Type: "application/pdf", Name: "Invoice.pdf", Content: attachment})
+	mail.Attachments = append(mail.Attachments, &models.Attachment{Type: "application/pdf", Name: "Invoice.pdf", Content: string(pdfResp)})
 
 	return mail.Send()
 }

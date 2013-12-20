@@ -14,33 +14,7 @@ import (
 func ProcessReply(params map[string]string, body map[string]*json.RawMessage) error {
 	var str string
 	json.Unmarshal(*body["message"], &str)
-	s, _ := url.QueryUnescape(str)
-	s = s[16:]
-	var m []map[string]interface{}
-	json.Unmarshal([]byte(s), &m)
-	to := m[0]["msg"].(map[string]interface{})["to"].([]interface{})
-	t := to[0]
-	toString := t.([]interface{})[0].(string)
-	message_id := toString[6:42]
-	msg := m[0]["msg"].(map[string]interface{})["html"]
-	fmt.Println(msg)
-	r := bytes.NewReader([]byte(msg.(string)))
-	text := parseHtml(r)
-	c := redisPool.Get()
-	commentBytes, _ := redis.Bytes(c.Do("GET", message_id))
-	var comment *Comment
-	json.Unmarshal(commentBytes, &comment)
-	newComment := new(Comment)
-	newComment.AgreementID = comment.AgreementID
-	newComment.Tags = comment.Tags
-	newComment.Text = text
-	newComment.UserID = comment.RecipientID
-
-	newCommentjson, _ := json.Marshal(newComment)
-	_, statusCode := sendServiceRequest("POST", config.CommentsService, "/agreement/"+comment.AgreementID+"/comments", newCommentjson)
-	if statusCode >= 400 {
-		return nil
-	}
+	fmt.Println(str)
 	return nil
 }
 

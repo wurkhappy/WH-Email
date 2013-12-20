@@ -9,6 +9,7 @@ import (
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/handlers"
+	"github.com/wurkhappy/WH-Email/models"
 	"github.com/wurkhappy/mandrill-go"
 	"log"
 )
@@ -87,6 +88,7 @@ func main() {
 		mandrill.APIkey = "AiZeQTNtBDY4omKvajApkg"
 	}
 	handlers.Setup()
+	models.Setup(*production)
 	conn, err := amqp.Dial(config.EmailBroker)
 	if err != nil {
 		fmt.Errorf("Dial: %s", err)
@@ -124,6 +126,7 @@ func routeMapper(d amqp.Delivery) {
 	if err != nil {
 		log.Printf("second error is: %v", err)
 		d.Nack(false, false)
+		return
 	}
 	d.Ack(false)
 }

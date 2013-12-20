@@ -16,6 +16,7 @@ type ServiceResp struct {
 
 func sendServiceRequest(method, service, path string, body []byte) (response []byte, statusCode int) {
 	client := mdp.NewClient(config.MDPBroker, false)
+	client.Timeout = 2 * time.Second
 	defer client.Close()
 	m := map[string]interface{}{
 		"Method": method,
