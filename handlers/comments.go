@@ -58,11 +58,11 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 		"AGREEMENT_LINK":  config.WebServer + path + "?" + signatureParams,
 		"AGREEMENT_NAME":  agreement.Title,
 		"SENDER_FULLNAME": sender.getEmailOrName(),
-		"MESSAGE":         comment.Text,
+		"MESSAGE":         template.HTML(comment.Text),
 		"MESSAGE_ID":      message_id.String(),
 	}
 	var html bytes.Buffer
-	newAgreementTpl.ExecuteTemplate(&html, "base", data)
+	newMessageTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.createFullName()}}
