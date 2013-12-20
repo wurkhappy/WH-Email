@@ -59,7 +59,7 @@ func (mail *Mail) Send() error {
 	if err != nil {
 		return err
 	}
-	if production {
+	if !production {
 		err = w.WriteField("o:testmode", "true")
 		if err != nil {
 			return err
