@@ -63,7 +63,7 @@ func (mail *Mail) Send() (msgID string, erro error) {
 	if err != nil {
 		return "", err
 	}
-	if !production {
+	if false {
 		err = w.WriteField("o:testmode", "true")
 		if err != nil {
 			return "", err

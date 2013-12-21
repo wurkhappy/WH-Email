@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"log"
 	"time"
+	"fmt"
 )
 
 var newMessageTpl *template.Template
@@ -71,6 +72,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	if err != nil {
 		return err
 	}
+	fmt.Println(msgID)
 	c := redisPool.Get()
 	comment.RecipientID = recipientID
 	jsonComment, _ := json.Marshal(comment)
