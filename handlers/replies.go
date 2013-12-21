@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/garyburd/redigo/redis"
 	"github.com/wurkhappy/WH-Config"
-	"fmt"
 )
 
 type Reply struct {
@@ -15,15 +14,10 @@ type Reply struct {
 func ProcessReply(params map[string]string, body map[string]*json.RawMessage) error {
 	var emailBytes []byte
 	json.Unmarshal(*body["message"], &emailBytes)
-	//var rep map[string]interface{}
 	reply := new(Reply)
-	err := json.Unmarshal(emailBytes, &reply)
-	fmt.Println(reply)
-	fmt.Println(err)
-	fmt.Println(reply.InReplyToID[0])
+	json.Unmarshal(emailBytes, &reply)
 	c := redisPool.Get()
-	commentBytes, err := redis.Bytes(c.Do("GET", reply.InReplyToID[0]))
-	fmt.Println("redis", string(commentBytes), err)
+	commentBytes, _ := redis.Bytes(c.Do("GET", reply.InReplyToID[0]))
 	var comment *Comment
 	json.Unmarshal(commentBytes, &comment)
 	newComment := new(Comment)
