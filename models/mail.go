@@ -2,7 +2,7 @@ package models
 
 import (
 	"bytes"
-	"fmt"
+	"encoding/json"
 	"mime/multipart"
 	"net/http"
 )
@@ -34,56 +34,61 @@ type To struct {
 	Name  string `json:"name"`
 }
 
-func (mail *Mail) Send() error {
+type MailGunResp struct {
+	ID string `json:"id"`
+}
+
+func (mail *Mail) Send() (msgID string, erro error) {
 	var err error
 	buf := new(bytes.Buffer)
 	w := multipart.NewWriter(buf)
 	err = w.WriteField("from", mail.FromName+" <"+mail.FromEmail+">")
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	for _, recipient := range mail.To {
 		err = w.WriteField("to", recipient.Name+" <"+recipient.Email+">")
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
 	err = w.WriteField("subject", mail.Subject)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	err = w.WriteField("html", mail.Html)
 	if err != nil {
-		return err
+		return "", err
 	}
 	if !production {
 		err = w.WriteField("o:testmode", "true")
 		if err != nil {
-			return err
+			return "", err
 		}
 	}
 
 	for _, attachment := range mail.Attachments {
 		attach, err := w.CreateFormFile("attachment", attachment.Name)
 		if err != nil {
-			return err
+			return "", err
 		}
 		attach.Write([]byte(attachment.Content))
 	}
 	w.Close()
 	req, err := http.NewRequest("POST", "https://api.mailgun.net/v2/notifications.wurkhappy.com/messages", buf)
 	if err != nil {
-		return err
+		return "", err
 	}
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.SetBasicAuth("api", "key-6t8u9z7c059n0is1c6k4779flnen1zf3")
 	res, err := http.DefaultClient.Do(req)
 	resbuf := new(bytes.Buffer)
 	resbuf.ReadFrom(res.Body)
-	fmt.Print(resbuf.String())
-	return err
+	mgResp := new(MailGunResp)
+	json.Unmarshal(resbuf.Bytes(), &mgResp)
+	return mgResp.ID, err
 
 }

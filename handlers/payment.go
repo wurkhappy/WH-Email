@@ -69,7 +69,8 @@ func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) 
 	mail.Html = html.String()
 	mail.Attachments = append(mail.Attachments, &models.Attachment{Type: "application/pdf", Name: "Invoice.pdf", Content: string(pdfResp)})
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 func PaymentAccepted(params map[string]string, body map[string]*json.RawMessage) error {
@@ -94,7 +95,8 @@ func PaymentAccepted(params map[string]string, body map[string]*json.RawMessage)
 	mail.Subject = data["CLIENT_FULLNAME"].(string) + " Just Paid You"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 func PaymentSent(params map[string]string, body map[string]*json.RawMessage) error {
@@ -119,7 +121,8 @@ func PaymentSent(params map[string]string, body map[string]*json.RawMessage) err
 	mail.Subject = "You just paid " + data["FREELANCER_FULLNAME"].(string)
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 
 }
 
@@ -145,7 +148,8 @@ func PaymentReject(params map[string]string, body map[string]*json.RawMessage) e
 	mail.Subject = data["CLIENT_FULLNAME"].(string) + " Has Disputed Your Request"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 type Payment struct {

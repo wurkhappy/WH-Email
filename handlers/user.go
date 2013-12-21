@@ -46,7 +46,8 @@ func ConfirmSignup(params map[string]string, body map[string]*json.RawMessage) e
 	mail.Subject = "Welcome to Wurk Happy!"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 func ForgotPassword(params map[string]string, body map[string]*json.RawMessage) error {
@@ -73,5 +74,6 @@ func ForgotPassword(params map[string]string, body map[string]*json.RawMessage) 
 	mail.Subject = "Wurk Happy Request to Reset Password"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }

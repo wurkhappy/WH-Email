@@ -82,7 +82,8 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 	mail.Subject = data["FREELANCER_FULLNAME"].(string) + " Has Just Sent You A New Agreement"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 func AgreementChange(params map[string]string, body map[string]*json.RawMessage) error {
@@ -105,7 +106,8 @@ func AgreementChange(params map[string]string, body map[string]*json.RawMessage)
 	mail.Subject = data["FREELANCER_FULLNAME"].(string) + " Requests Changes to Your Agreement"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 func AgreementAccept(params map[string]string, body map[string]*json.RawMessage) error {
@@ -128,7 +130,8 @@ func AgreementAccept(params map[string]string, body map[string]*json.RawMessage)
 	mail.Subject = data["CLIENT_FULLNAME"].(string) + " Accepted Your Agreement"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 func AgreementReject(params map[string]string, body map[string]*json.RawMessage) error {
@@ -151,7 +154,8 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 	mail.Subject = data["CLIENT_FULLNAME"].(string) + " Has Disputed Your Request"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 
 }
 

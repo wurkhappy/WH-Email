@@ -3,8 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
-	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
@@ -39,7 +37,6 @@ type Tag struct {
 }
 
 func SendComment(params map[string]string, body map[string]*json.RawMessage) error {
-	message_id, _ := uuid.NewV4()
 	var comment *Comment
 	json.Unmarshal(*body["comment"], &comment)
 	sender := getUserInfo(comment.UserID)
@@ -59,27 +56,25 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 		"AGREEMENT_NAME":  agreement.Title,
 		"SENDER_FULLNAME": sender.getEmailOrName(),
 		"MESSAGE":         template.HTML(comment.Text),
-		"MESSAGE_ID":      message_id.String(),
 	}
 	var html bytes.Buffer
 	newMessageTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.createFullName()}}
-	mail.FromEmail = "reply-" + message_id.String() + "@notifications.wurkhappy.com"
+	mail.FromEmail = "reply@notifications.wurkhappy.com"
 	mail.FromName = "Wurk Happy"
 	mail.Subject = sender.getEmailOrName() + " Has Just Sent You A New Message"
 	mail.Html = html.String()
 
-	err := mail.Send()
+	msgID, err := mail.Send()
 	if err != nil {
 		return err
 	}
 	c := redisPool.Get()
-	fmt.Println(message_id.String())
 	comment.RecipientID = recipientID
 	jsonComment, _ := json.Marshal(comment)
-	if _, err := c.Do("SET", message_id.String(), jsonComment); err != nil {
+	if _, err := c.Do("SET", msgID, jsonComment); err != nil {
 		log.Panic(err)
 	}
 	return nil
