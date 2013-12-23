@@ -63,12 +63,12 @@ func (mail *Mail) Send() (msgID string, erro error) {
 	if err != nil {
 		return "", err
 	}
-	if !production {
-		err = w.WriteField("o:testmode", "true")
-		if err != nil {
-			return "", err
-		}
-	}
+	// if !production {
+	// 	err = w.WriteField("o:testmode", "true")
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// }
 
 	for _, attachment := range mail.Attachments {
 		attach, err := w.CreateFormFile("attachment", attachment.Name)
