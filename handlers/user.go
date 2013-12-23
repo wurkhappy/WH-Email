@@ -7,6 +7,7 @@ import (
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
 	"time"
+	//"fmt"
 )
 
 var confirmSignupTpl *template.Template
@@ -34,7 +35,7 @@ func ConfirmSignup(params map[string]string, body map[string]*json.RawMessage) e
 	signatureParams := createSignatureParams(userID, path, expiration)
 
 	data := map[string]interface{}{
-		"signup_link": config.WebServer + path + "?" + signatureParams,
+		"SIGNUP_LINK": config.WebServer + path + "?" + signatureParams,
 	}
 	var html bytes.Buffer
 	confirmSignupTpl.ExecuteTemplate(&html, "base", data)
