@@ -1,9 +1,17 @@
 package models
 
 import (
-	"github.com/wurkhappy/mandrill-go"
-	"fmt"
+	"bytes"
+	"encoding/json"
+	"mime/multipart"
+	"net/http"
 )
+
+var production bool
+
+func Setup(production bool) {
+	production = production
+}
 
 type Mail struct {
 	Html        string        `json:"html,omitempty"`
@@ -26,26 +34,61 @@ type To struct {
 	Name  string `json:"name"`
 }
 
-func (mail *Mail) Send() error {
-	m := mandrill.NewCall()
-	m.Category = "messages"
-	m.Method = "send"
-	message := new(mandrill.Message)
-	for _, to := range mail.To {
-		message.To = append(message.To, mandrill.To{Email: to.Email, Name: to.Name})
-	}
-	message.FromEmail = mail.FromEmail
-	message.FromName = mail.FromName
-	message.Subject = mail.Subject
-	message.Html = mail.Html
-	for _, attachment := range mail.Attachments {
-		message.Attachments = append(message.Attachments, &mandrill.Attachment{Type: attachment.Type, Name: attachment.Name, Content: attachment.Content})
-	}
-	m.Args["message"] = message
+type MailGunResp struct {
+	ID string `json:"id"`
+}
 
-	_, err := m.Send()
+func (mail *Mail) Send() (msgID string, erro error) {
+	var err error
+	buf := new(bytes.Buffer)
+	w := multipart.NewWriter(buf)
+	err = w.WriteField("from", mail.FromName+" <"+mail.FromEmail+">")
 	if err != nil {
-		return fmt.Errorf("%s", err.Message)
+		return "", err
 	}
-	return nil
+
+	for _, recipient := range mail.To {
+		err = w.WriteField("to", recipient.Name+" <"+recipient.Email+">")
+		if err != nil {
+			return "", err
+		}
+	}
+
+	err = w.WriteField("subject", mail.Subject)
+	if err != nil {
+		return "", err
+	}
+
+	err = w.WriteField("html", mail.Html)
+	if err != nil {
+		return "", err
+	}
+	// if !production {
+	// 	err = w.WriteField("o:testmode", "true")
+	// 	if err != nil {
+	// 		return "", err
+	// 	}
+	// }
+
+	for _, attachment := range mail.Attachments {
+		attach, err := w.CreateFormFile("attachment", attachment.Name)
+		if err != nil {
+			return "", err
+		}
+		attach.Write([]byte(attachment.Content))
+	}
+	w.Close()
+	req, err := http.NewRequest("POST", "https://api.mailgun.net/v2/notifications.wurkhappy.com/messages", buf)
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("Content-Type", w.FormDataContentType())
+	req.SetBasicAuth("api", "key-6t8u9z7c059n0is1c6k4779flnen1zf3")
+	res, err := http.DefaultClient.Do(req)
+	resbuf := new(bytes.Buffer)
+	resbuf.ReadFrom(res.Body)
+	mgResp := new(MailGunResp)
+	json.Unmarshal(resbuf.Bytes(), &mgResp)
+	return mgResp.ID, err
+
 }

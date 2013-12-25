@@ -2,7 +2,7 @@ package handlers
 
 import (
 	"bytes"
-	"encoding/base64"
+	// "encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/wurkhappy/WH-Config"
@@ -57,7 +57,6 @@ func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) 
 	var invoiceHTML bytes.Buffer
 	invoiceTpl.ExecuteTemplate(&invoiceHTML, "invoice", data)
 	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", []byte(invoiceHTML.String()))
-	attachment := base64.StdEncoding.EncodeToString(pdfResp)
 
 	var html bytes.Buffer
 	paymentRequestTpl.Execute(&html, data)
@@ -68,9 +67,10 @@ func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) 
 	mail.FromName = "Wurk Happy"
 	mail.Subject = data["FREELANCER_FULLNAME"].(string) + " requests payment"
 	mail.Html = html.String()
-	mail.Attachments = append(mail.Attachments, &models.Attachment{Type: "application/pdf", Name: "Invoice.pdf", Content: attachment})
+	mail.Attachments = append(mail.Attachments, &models.Attachment{Type: "application/pdf", Name: "Invoice.pdf", Content: string(pdfResp)})
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 func PaymentAccepted(params map[string]string, body map[string]*json.RawMessage) error {
@@ -95,7 +95,8 @@ func PaymentAccepted(params map[string]string, body map[string]*json.RawMessage)
 	mail.Subject = data["CLIENT_FULLNAME"].(string) + " Just Paid You"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 func PaymentSent(params map[string]string, body map[string]*json.RawMessage) error {
@@ -120,7 +121,8 @@ func PaymentSent(params map[string]string, body map[string]*json.RawMessage) err
 	mail.Subject = "You just paid " + data["FREELANCER_FULLNAME"].(string)
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 
 }
 
@@ -146,7 +148,8 @@ func PaymentReject(params map[string]string, body map[string]*json.RawMessage) e
 	mail.Subject = data["CLIENT_FULLNAME"].(string) + " Has Disputed Your Request"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 type Payment struct {

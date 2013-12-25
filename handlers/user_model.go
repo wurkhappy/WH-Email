@@ -3,13 +3,15 @@ package handlers
 import (
 	"encoding/json"
 	"github.com/wurkhappy/WH-Config"
+	"time"
 )
 
 type User struct {
-	ID        string `json:"id"`
-	Email     string `json:"email"`
-	FirstName string `json:"firstName"`
-	LastName  string `json:"lastName"`
+	ID          string    `json:"id"`
+	Email       string    `json:"email"`
+	FirstName   string    `json:"firstName"`
+	LastName    string    `json:"lastName"`
+	DateCreated time.Time `json:"dateCreated"`
 }
 
 func (u *User) getEmailOrName() string {

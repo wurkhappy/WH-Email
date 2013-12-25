@@ -8,6 +8,7 @@ import (
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
 	"strconv"
+	"time"
 )
 
 var newAgreementTpl *template.Template
@@ -22,6 +23,10 @@ func init() {
 	newAgreementTpl = template.Must(template.ParseFiles(
 		"templates/base.html",
 		"templates/agreement_new_user.html",
+	))
+	agreementSentTpl = template.Must(template.ParseFiles(
+		"templates/base.html",
+		"templates/agreement_sent.html",
 	))
 	agreementChangeTpl = template.Must(template.ParseFiles(
 		"templates/base.html",
@@ -57,10 +62,14 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 		json.Unmarshal(*messageBytes, &message)
 	}
 
-	data := createAgreementData(agreement, message)
+	data, _, client := createAgreementData(agreement, message)
 
 	var html bytes.Buffer
-	newAgreementTpl.ExecuteTemplate(&html, "base", data)
+	if client.DateCreated.After(time.Now().Add(-5 * time.Minute)) {
+		newAgreementTpl.ExecuteTemplate(&html, "base", data)
+	} else {
+		agreementSentTpl.ExecuteTemplate(&html, "base", data)
+	}
 
 	mail := new(models.Mail)
 	if agreement.DraftCreatorID == agreement.FreelancerID {
@@ -73,7 +82,8 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 	mail.Subject = data["FREELANCER_FULLNAME"].(string) + " Has Just Sent You A New Agreement"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 func AgreementChange(params map[string]string, body map[string]*json.RawMessage) error {
@@ -84,7 +94,7 @@ func AgreementChange(params map[string]string, body map[string]*json.RawMessage)
 		json.Unmarshal(*messageBytes, &message)
 	}
 
-	data := createAgreementData(agreement, message)
+	data, _, _ := createAgreementData(agreement, message)
 
 	var html bytes.Buffer
 	agreementChangeTpl.ExecuteTemplate(&html, "base", data)
@@ -96,7 +106,8 @@ func AgreementChange(params map[string]string, body map[string]*json.RawMessage)
 	mail.Subject = data["FREELANCER_FULLNAME"].(string) + " Requests Changes to Your Agreement"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 func AgreementAccept(params map[string]string, body map[string]*json.RawMessage) error {
@@ -107,7 +118,7 @@ func AgreementAccept(params map[string]string, body map[string]*json.RawMessage)
 		json.Unmarshal(*messageBytes, &message)
 	}
 
-	data := createAgreementData(agreement, message)
+	data, _, _ := createAgreementData(agreement, message)
 
 	var html bytes.Buffer
 	agreementAcceptTpl.ExecuteTemplate(&html, "base", data)
@@ -119,7 +130,8 @@ func AgreementAccept(params map[string]string, body map[string]*json.RawMessage)
 	mail.Subject = data["CLIENT_FULLNAME"].(string) + " Accepted Your Agreement"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 }
 
 func AgreementReject(params map[string]string, body map[string]*json.RawMessage) error {
@@ -130,7 +142,7 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 		json.Unmarshal(*messageBytes, &message)
 	}
 
-	data := createAgreementData(agreement, message)
+	data, _, _ := createAgreementData(agreement, message)
 
 	var html bytes.Buffer
 	agreementDisputeTpl.ExecuteTemplate(&html, "base", data)
@@ -142,7 +154,8 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 	mail.Subject = data["CLIENT_FULLNAME"].(string) + " Has Disputed Your Request"
 	mail.Html = html.String()
 
-	return mail.Send()
+	_, err := mail.Send()
+	return err
 
 }
 
@@ -166,13 +179,13 @@ func (a *Agreement) getTotalCost() float64 {
 	return totalCost
 }
 
-func createAgreementData(agreement *Agreement, message string) map[string]interface{} {
+func createAgreementData(agreement *Agreement, message string) (data map[string]interface{}, freelancer *User, client *User) {
 	agreementID := agreement.VersionID
 	clientID := agreement.ClientID
 	freelancerID := agreement.FreelancerID
 	path := "/agreement/v/" + agreementID
-	client := getUserInfo(clientID)
-	freelancer := getUserInfo(freelancerID)
+	client = getUserInfo(clientID)
+	freelancer = getUserInfo(freelancerID)
 	expiration := 60 * 60 * 24
 	signatureParams := createSignatureParams(freelancerID, path, expiration)
 
@@ -187,5 +200,5 @@ func createAgreementData(agreement *Agreement, message string) map[string]interf
 		"CLIENT_EMAIL":           client.Email,
 		"FREELANCER_EMAIL":       freelancer.Email,
 	}
-	return m
+	return m, freelancer, client
 }
