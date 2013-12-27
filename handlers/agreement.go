@@ -62,7 +62,8 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 		json.Unmarshal(*messageBytes, &message)
 	}
 
-	data, _, client := createAgreementData(agreement, message)
+	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
+	data, _, client := createAgreementData(agreement, message, sendToFreelancer)
 
 	var html bytes.Buffer
 	if client.DateCreated.After(time.Now().Add(-5 * time.Minute)) {
@@ -94,7 +95,8 @@ func AgreementChange(params map[string]string, body map[string]*json.RawMessage)
 		json.Unmarshal(*messageBytes, &message)
 	}
 
-	data, _, _ := createAgreementData(agreement, message)
+	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
+	data, _, _ := createAgreementData(agreement, message, sendToFreelancer)
 
 	var html bytes.Buffer
 	agreementChangeTpl.ExecuteTemplate(&html, "base", data)
@@ -118,7 +120,8 @@ func AgreementAccept(params map[string]string, body map[string]*json.RawMessage)
 		json.Unmarshal(*messageBytes, &message)
 	}
 
-	data, _, _ := createAgreementData(agreement, message)
+	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
+	data, _, _ := createAgreementData(agreement, message, sendToFreelancer)
 
 	var html bytes.Buffer
 	agreementAcceptTpl.ExecuteTemplate(&html, "base", data)
@@ -142,7 +145,8 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 		json.Unmarshal(*messageBytes, &message)
 	}
 
-	data, _, _ := createAgreementData(agreement, message)
+	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
+	data, _, _ := createAgreementData(agreement, message, sendToFreelancer)
 
 	var html bytes.Buffer
 	agreementDisputeTpl.ExecuteTemplate(&html, "base", data)
@@ -179,15 +183,20 @@ func (a *Agreement) getTotalCost() float64 {
 	return totalCost
 }
 
-func createAgreementData(agreement *Agreement, message string) (data map[string]interface{}, freelancer *User, client *User) {
+func createAgreementData(agreement *Agreement, message string, toFreelancer bool) (data map[string]interface{}, freelancer *User, client *User) {
 	agreementID := agreement.VersionID
 	clientID := agreement.ClientID
 	freelancerID := agreement.FreelancerID
 	path := "/agreement/v/" + agreementID
 	client = getUserInfo(clientID)
 	freelancer = getUserInfo(freelancerID)
-	expiration := 60 * 60 * 24
-	signatureParams := createSignatureParams(freelancerID, path, expiration)
+	expiration := 60 * 60 * 24 * 7 * 4
+	var signatureParams string
+	if toFreelancer {
+		signatureParams = createSignatureParams(freelancerID, path, expiration)
+	} else {
+		signatureParams = createSignatureParams(clientID, path, expiration)
+	}
 
 	m := map[string]interface{}{
 		"AGREEMENT_LINK":         config.WebServer + path + "?" + signatureParams,

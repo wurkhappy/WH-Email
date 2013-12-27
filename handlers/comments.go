@@ -49,7 +49,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	recipient := getUserInfo(recipientID)
 
 	path := "/agreement/v/" + comment.AgreementVersionID
-	expiration := int(time.Now().Add(time.Hour * 24 * 5).Unix())
+	expiration := int(time.Now().Add(time.Hour * 24 * 7 * 4).Unix())
 	signatureParams := createSignatureParams(recipientID, path, expiration)
 
 	data := map[string]interface{}{

@@ -52,7 +52,8 @@ func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) 
 		json.Unmarshal(*messageBytes, &message)
 	}
 
-	data := createPaymentData(agreement, payment, message)
+	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
+	data := createPaymentData(agreement, payment, message, sendToFreelancer)
 
 	var invoiceHTML bytes.Buffer
 	invoiceTpl.ExecuteTemplate(&invoiceHTML, "invoice", data)
@@ -83,7 +84,8 @@ func PaymentAccepted(params map[string]string, body map[string]*json.RawMessage)
 		json.Unmarshal(*messageBytes, &message)
 	}
 
-	data := createPaymentData(agreement, payment, message)
+	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
+	data := createPaymentData(agreement, payment, message, sendToFreelancer)
 
 	var html bytes.Buffer
 	paymentReceivedTpl.ExecuteTemplate(&html, "base", data)
@@ -109,7 +111,8 @@ func PaymentSent(params map[string]string, body map[string]*json.RawMessage) err
 		json.Unmarshal(*messageBytes, &message)
 	}
 
-	data := createPaymentData(agreement, payment, message)
+	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
+	data := createPaymentData(agreement, payment, message, sendToFreelancer)
 
 	var html bytes.Buffer
 	paymentSentTpl.ExecuteTemplate(&html, "base", data)
@@ -136,7 +139,8 @@ func PaymentReject(params map[string]string, body map[string]*json.RawMessage) e
 		json.Unmarshal(*messageBytes, &message)
 	}
 
-	data := createPaymentData(agreement, payment, message)
+	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
+	data := createPaymentData(agreement, payment, message, sendToFreelancer)
 
 	var html bytes.Buffer
 	paymentDisputeTpl.ExecuteTemplate(&html, "base", data)
@@ -261,15 +265,20 @@ func paymentFreelancerSendToClient(body map[string]*json.RawMessage, template st
 
 }
 
-func createPaymentData(agreement *Agreement, payment *Payment, message string) map[string]interface{} {
+func createPaymentData(agreement *Agreement, payment *Payment, message string, toFreelancer bool) map[string]interface{} {
 	agreementID := agreement.VersionID
 	clientID := agreement.ClientID
 	freelancerID := agreement.FreelancerID
 	path := "/agreement/v/" + agreementID
 	client := getUserInfo(clientID)
 	freelancer := getUserInfo(freelancerID)
-	expiration := 60 * 60 * 24
-	signatureParams := createSignatureParams(freelancerID, path, expiration)
+	expiration := 60 * 60 * 24 * 7 * 4
+	var signatureParams string
+	if toFreelancer {
+		signatureParams = createSignatureParams(freelancerID, path, expiration)
+	} else {
+		signatureParams = createSignatureParams(clientID, path, expiration)
+	}
 
 	data := map[string]interface{}{
 		"AGREEMENT_LINK":         config.WebServer + path + "?" + signatureParams,
