@@ -38,19 +38,19 @@ func init() {
 	))
 	agreementDisputeTpl = template.Must(template.ParseFiles(
 		"templates/base.html",
-		"templates/agreement_accept.html",
+		"templates/agreement_dispute.html",
 	))
 	agreementRequestTpl = template.Must(template.ParseFiles(
 		"templates/base.html",
-		"templates/agreement_accept.html",
+		"templates/agreement_request.html",
 	))
 	agreementSentTpl = template.Must(template.ParseFiles(
 		"templates/base.html",
-		"templates/agreement_accept.html",
+		"templates/agreement_sent.html",
 	))
 	agreementVoidedTpl = template.Must(template.ParseFiles(
 		"templates/base.html",
-		"templates/agreement_accept.html",
+		"templates/agreement_voided.html",
 	))
 }
 
