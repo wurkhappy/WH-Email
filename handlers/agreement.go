@@ -65,6 +65,16 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
 	data, _, client := createAgreementData(agreement, message, sendToFreelancer)
 
+	mail := new(models.Mail)
+	status := agreement.CurrentStatus
+	if status.UserID == agreement.FreelancerID {
+		data["SENDER_FULLNAME"] = data["FREELANCER_FULLNAME"]
+		mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
+	} else {
+		data["SENDER_FULLNAME"] = data["CLIENT_FULLNAME"]
+		mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
+	}
+
 	var html bytes.Buffer
 	if client.DateCreated.After(time.Now().Add(-5 * time.Minute)) {
 		newAgreementTpl.ExecuteTemplate(&html, "base", data)
@@ -72,15 +82,9 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 		agreementSentTpl.ExecuteTemplate(&html, "base", data)
 	}
 
-	mail := new(models.Mail)
-	if agreement.DraftCreatorID == agreement.FreelancerID {
-		mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
-	} else {
-		mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
-	}
 	mail.FromEmail = "reply@notifications.wurkhappy.com"
 	mail.FromName = "Wurk Happy"
-	mail.Subject = data["FREELANCER_FULLNAME"].(string) + " Has Just Sent You A New Agreement"
+	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Just Sent You A New Agreement"
 	mail.Html = html.String()
 
 	_, err := mail.Send()
@@ -98,14 +102,22 @@ func AgreementChange(params map[string]string, body map[string]*json.RawMessage)
 	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
 	data, _, _ := createAgreementData(agreement, message, sendToFreelancer)
 
+	mail := new(models.Mail)
+	status := agreement.CurrentStatus
+	if status.UserID == agreement.FreelancerID {
+		data["SENDER_FULLNAME"] = data["FREELANCER_FULLNAME"]
+		mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
+	} else {
+		data["SENDER_FULLNAME"] = data["CLIENT_FULLNAME"]
+		mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
+	}
+
 	var html bytes.Buffer
 	agreementChangeTpl.ExecuteTemplate(&html, "base", data)
 
-	mail := new(models.Mail)
-	mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
 	mail.FromEmail = "reply@notifications.wurkhappy.com"
 	mail.FromName = "Wurk Happy"
-	mail.Subject = data["FREELANCER_FULLNAME"].(string) + " Requests Changes to Your Agreement"
+	mail.Subject = data["SENDER_FULLNAME"].(string) + " Requests Changes to Your Agreement"
 	mail.Html = html.String()
 
 	_, err := mail.Send()
@@ -122,15 +134,22 @@ func AgreementAccept(params map[string]string, body map[string]*json.RawMessage)
 
 	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
 	data, _, _ := createAgreementData(agreement, message, sendToFreelancer)
+	mail := new(models.Mail)
+	status := agreement.CurrentStatus
+	if status.UserID == agreement.FreelancerID {
+		data["SENDER_FULLNAME"] = data["FREELANCER_FULLNAME"]
+		mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
+	} else {
+		data["SENDER_FULLNAME"] = data["CLIENT_FULLNAME"]
+		mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
+	}
 
 	var html bytes.Buffer
 	agreementAcceptTpl.ExecuteTemplate(&html, "base", data)
 
-	mail := new(models.Mail)
-	mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
 	mail.FromEmail = "reply@notifications.wurkhappy.com"
 	mail.FromName = "Wurk Happy"
-	mail.Subject = data["CLIENT_FULLNAME"].(string) + " Accepted Your Agreement"
+	mail.Subject = data["SENDER_FULLNAME"].(string) + " Accepted Your Agreement"
 	mail.Html = html.String()
 
 	_, err := mail.Send()
@@ -147,15 +166,22 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 
 	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
 	data, _, _ := createAgreementData(agreement, message, sendToFreelancer)
+	mail := new(models.Mail)
+	status := agreement.CurrentStatus
+	if status.UserID == agreement.FreelancerID {
+		data["SENDER_FULLNAME"] = data["FREELANCER_FULLNAME"]
+		mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
+	} else {
+		data["SENDER_FULLNAME"] = data["CLIENT_FULLNAME"]
+		mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
+	}
 
 	var html bytes.Buffer
 	agreementDisputeTpl.ExecuteTemplate(&html, "base", data)
 
-	mail := new(models.Mail)
-	mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
 	mail.FromEmail = "reply@notifications.wurkhappy.com"
 	mail.FromName = "Wurk Happy"
-	mail.Subject = data["CLIENT_FULLNAME"].(string) + " Has Disputed Your Request"
+	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Disputed Your Request"
 	mail.Html = html.String()
 
 	_, err := mail.Send()
@@ -171,14 +197,28 @@ type Agreement struct {
 	FreelancerID   string     `json:"freelancerID"`
 	Title          string     `json:"title"`
 	Payments       []*Payment `json:"payments"`
+	WorkItems      WorkItems  `json:"workItems"`
 	DraftCreatorID string     `json:"draftCreatorID"`
+	CurrentStatus  *Status    `json:"currentStatus"`
+}
+
+type Status struct {
+	ID                 string    `json:"id" bson:"_id"`
+	AgreementID        string    `json:"agreementID"`
+	AgreementVersionID string    `json:"agreementVersionID"`
+	AgreementVersion   int       `json:"agreementVersion"`
+	ParentID           string    `json:"parentID"`
+	PaymentID          string    `json:"paymentID"`
+	Action             string    `json:"action"`
+	Date               time.Time `json:"date"`
+	UserID             string    `json:"userID"`
 }
 
 func (a *Agreement) getTotalCost() float64 {
 	var totalCost float64
-	payments := a.Payments
-	for _, payment := range payments {
-		totalCost += payment.Amount
+	workItems := a.WorkItems
+	for _, workItem := range workItems {
+		totalCost += workItem.Amount
 	}
 	return totalCost
 }
@@ -204,7 +244,7 @@ func createAgreementData(agreement *Agreement, message string, toFreelancer bool
 		"CLIENT_FULLNAME":        client.getEmailOrName(),
 		"FREELANCER_FULLNAME":    freelancer.getEmailOrName(),
 		"MESSAGE":                message,
-		"AGREEMENT_NUM_PAYMENTS": strconv.Itoa(len(agreement.Payments)),
+		"AGREEMENT_NUM_PAYMENTS": strconv.Itoa(len(agreement.WorkItems)),
 		"AGREEMENT_COST":         fmt.Sprintf("%g", agreement.getTotalCost()),
 		"CLIENT_EMAIL":           client.Email,
 		"FREELANCER_EMAIL":       freelancer.Email,

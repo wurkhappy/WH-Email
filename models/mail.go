@@ -3,6 +3,7 @@ package models
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 )
@@ -35,7 +36,8 @@ type To struct {
 }
 
 type MailGunResp struct {
-	ID string `json:"id"`
+	ID      string `json:"id"`
+	Message string `json:"message"`
 }
 
 func (mail *Mail) Send() (msgID string, erro error) {
@@ -88,7 +90,11 @@ func (mail *Mail) Send() (msgID string, erro error) {
 	resbuf := new(bytes.Buffer)
 	resbuf.ReadFrom(res.Body)
 	mgResp := new(MailGunResp)
+	fmt.Println(resbuf.String())
 	json.Unmarshal(resbuf.Bytes(), &mgResp)
+	if mgResp.ID == "" {
+		err = fmt.Errorf(mgResp.Message)
+	}
 	return mgResp.ID, err
 
 }

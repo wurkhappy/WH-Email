@@ -3,7 +3,7 @@
   <tbody>
 
     <tr>
-      <td colspan="3" style="text-align: center;font-size:16px;border-top:1px solid #ddd;border-bottom:1px solid #ddd; padding-top:3px; padding-bottom:3px;font-weight:bold;">INVOICE FOR {{.AGREEMENT_MILESTONE}}</td>
+      <td colspan="3" style="text-align: center;font-size:16px;border-top:1px solid #ddd;border-bottom:1px solid #ddd; padding-top:3px; padding-bottom:3px;font-weight:bold;">INVOICE FOR {{.AGREEMENT_NAME}}</td>
     </tr>
     <tr>
       <td style="height:10px;"></td>
@@ -37,19 +37,19 @@
 </tr>
 {{if .WORK_ITEMS}}
 <tr>
-  <td style="font-weight:bold;">Work items included in this milestone:</td>
+  <td style="font-weight:bold;">Work items included:</td>
 </tr>
 {{end}}
 {{range .WORK_ITEMS}}
 <tr>
-  <td>{{.Text}}</td>
+  <td>{{.WorkItemTitle}}</td>
+  <td style="text-align:right;">${{.Amount}}</td>
 </tr>
 {{end}}
 <tr style="height:10px;">
 </tr>
 <tr>
-  <td></td>
-  <td style="font-weight:bold;font-size:18px;text-align:right;">Milestone Total:</td>
+  <td style="font-weight:bold;font-size:18px;text-align:right;">Total:</td>
   <td style="font-weight:bold;font-size:18px;text-align:right;">${{.PAYMENT_AMOUNT}}</td>
 </tr>
 <tr style="height:10px;">
