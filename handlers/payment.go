@@ -175,7 +175,7 @@ type PaymentItems []*PaymentItem
 
 type WorkItem struct {
 	ID           string       `json:"id"`
-	Amount       float64      `json:"amount"`
+	Amount       float64      `json:"amountDue"`
 	Title        string       `json:"title"`
 	ScopeItems   []*ScopeItem `json:"scopeItems"`
 	DateExpected time.Time    `json:"dateExpected"`
