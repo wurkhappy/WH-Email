@@ -74,7 +74,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 		mail.InReplyTo = replyTo
 	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.createFullName()}}
-	mail.FromEmail = "reply" + tagsJoined[0:2] + "@notifications.wurkhappy.com"
+	mail.FromEmail = "test" + tagsJoined[0:2] + "@notifications.wurkhappy.com"
 	mail.FromName = "Wurk Happy"
 	mail.Subject = sender.getEmailOrName() + " Has Just Sent You A New Message"
 	mail.Html = html.String()
