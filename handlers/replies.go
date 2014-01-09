@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"github.com/garyburd/redigo/redis"
 	"github.com/wurkhappy/WH-Config"
+	//"fmt"
+	"strings"
 )
 
 type Reply struct {
 	HTML        []string `json:"stripped-html"`
-	InReplyToID []string `json:"In-Reply-To"`
+	References []string `json:"References"`
 }
 
 func ProcessReply(params map[string]string, body map[string]*json.RawMessage) error {
@@ -16,10 +18,14 @@ func ProcessReply(params map[string]string, body map[string]*json.RawMessage) er
 	json.Unmarshal(*body["message"], &emailBytes)
 	reply := new(Reply)
 	json.Unmarshal(emailBytes, &reply)
+	refs := reply.References[0]
+	index := strings.Index(refs, ">")
+	msgID := refs[0:index+1]
+	
 	c := redisPool.Get()
-	commentBytes, _ := redis.Bytes(c.Do("GET", reply.InReplyToID[0]))
+	commentBytes, _ := redis.String(c.Do("GET", msgID))
 	var comment *Comment
-	json.Unmarshal(commentBytes, &comment)
+	json.Unmarshal([]byte(commentBytes), &comment)
 	newComment := new(Comment)
 	newComment.AgreementID = comment.AgreementID
 	newComment.Tags = comment.Tags
