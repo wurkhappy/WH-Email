@@ -66,8 +66,13 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 		tagsJoined += tag.ID
 	}
 	fmt.Println(tagsJoined)
+	c := redisPool.Get()
+	replyTo, _ := redis.String(c.Do("GET", tagsJoined))
+
 	mail := new(models.Mail)
-	mail.InReplyTo = tagsJoined
+	if replyTo != "" {
+		mail.InReplyTo = replyTo
+	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.createFullName()}}
 	mail.FromEmail = "reply" + tagsJoined[0:2] + "@notifications.wurkhappy.com"
 	mail.FromName = "Wurk Happy"
@@ -79,10 +84,12 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 		return err
 	}
 	fmt.Println(msgID)
-	c := redisPool.Get()
 	comment.RecipientID = recipientID
 	jsonComment, _ := json.Marshal(comment)
 	if _, err := c.Do("SET", msgID, jsonComment); err != nil {
+		log.Panic(err)
+	}
+	if _, err := c.Do("SET", tagsJoined, msgID); err != nil {
 		log.Panic(err)
 	}
 	return nil
