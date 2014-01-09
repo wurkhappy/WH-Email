@@ -3,12 +3,12 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
 	"log"
 	"time"
-	"fmt"
 )
 
 var newMessageTpl *template.Template
@@ -61,9 +61,15 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	var html bytes.Buffer
 	newMessageTpl.ExecuteTemplate(&html, "base", data)
 
+	var tagsJoined string
+	for _, tag := range comment.Tags {
+		tagsJoined += tag.ID
+	}
+	fmt.Println(tagsJoined)
 	mail := new(models.Mail)
+	mail.InReplyTo = tagsJoined
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.createFullName()}}
-	mail.FromEmail = "reply@notifications.wurkhappy.com"
+	mail.FromEmail = "reply" + tagsJoined[0:2] + "@notifications.wurkhappy.com"
 	mail.FromName = "Wurk Happy"
 	mail.Subject = sender.getEmailOrName() + " Has Just Sent You A New Message"
 	mail.Html = html.String()

@@ -22,6 +22,7 @@ type Mail struct {
 	To          []To          `json:"to"`
 	BCCAddress  string        `json:"bcc_address,omitempty"`
 	Attachments []*Attachment `json:"attachments,omitempty"`
+	InReplyTo   string
 }
 
 type Attachment struct {
@@ -71,7 +72,9 @@ func (mail *Mail) Send() (msgID string, erro error) {
 	// 		return "", err
 	// 	}
 	// }
-
+	if mail.InReplyTo != "" {
+		w.WriteField("h:In-Reply-To", "reply@notifications.wurkhappy.com")
+	}
 	for _, attachment := range mail.Attachments {
 		attach, err := w.CreateFormFile("attachment", attachment.Name)
 		if err != nil {
