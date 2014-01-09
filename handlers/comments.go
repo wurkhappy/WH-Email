@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/garyburd/redigo/redis"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
@@ -61,11 +62,14 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	var html bytes.Buffer
 	newMessageTpl.ExecuteTemplate(&html, "base", data)
 
+	//join all tag IDs into a string to create a unique ID for threading
 	var tagsJoined string
 	for _, tag := range comment.Tags {
 		tagsJoined += tag.ID
 	}
-	fmt.Println(tagsJoined)
+	//add part of the user's ID so that it's unique for the user
+	tagsJoined += recipient.ID[0:4]
+
 	c := redisPool.Get()
 	replyTo, _ := redis.String(c.Do("GET", tagsJoined))
 
@@ -86,11 +90,19 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	fmt.Println(msgID)
 	comment.RecipientID = recipientID
 	jsonComment, _ := json.Marshal(comment)
-	if _, err := c.Do("SET", msgID, jsonComment); err != nil {
-		log.Panic(err)
-	}
-	if _, err := c.Do("SET", tagsJoined, msgID); err != nil {
-		log.Panic(err)
+
+	if replyTo == "" {
+		if _, err := c.Do("HMSET", msgID, "comment", jsonComment,
+			"user1Email", recipient.Email, "user1ID", recipient.ID,
+			"user2Email", sender.Email, "user2ID", sender.ID); err != nil {
+			log.Panic(err)
+		}
+		// if _, err := c.Do("SET", msgID, jsonComment); err != nil {
+		// 	log.Panic(err)
+		// }
+		if _, err := c.Do("SET", tagsJoined, msgID); err != nil {
+			log.Panic(err)
+		}
 	}
 	return nil
 }
