@@ -77,6 +77,7 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 
 	var html bytes.Buffer
 	if client.DateCreated.After(time.Now().Add(-5 * time.Minute)) {
+		data["AGREEMENT_LINK"] = data["AGREEMENT_LINK"].(string) + "#new-account"
 		newAgreementTpl.ExecuteTemplate(&html, "base", data)
 	} else {
 		agreementSentTpl.ExecuteTemplate(&html, "base", data)
