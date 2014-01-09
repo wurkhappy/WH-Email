@@ -73,7 +73,8 @@ func (mail *Mail) Send() (msgID string, erro error) {
 	// 	}
 	// }
 	if mail.InReplyTo != "" {
-		w.WriteField("h:In-Reply-To", "reply@notifications.wurkhappy.com")
+		w.WriteField("h:In-Reply-To", mail.InReplyTo)
+		w.WriteField("h:References", mail.InReplyTo)
 	}
 	for _, attachment := range mail.Attachments {
 		attach, err := w.CreateFormFile("attachment", attachment.Name)
