@@ -10,12 +10,12 @@ import (
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/handlers"
 	"github.com/wurkhappy/WH-Email/models"
-	"github.com/wurkhappy/mandrill-go"
 	"log"
 )
 
 var (
 	production   = flag.Bool("production", false, "Production settings")
+	staging      = flag.Bool("staging", false, "Production settings")
 	exchangeType = flag.String("exchange-type", "direct", "Exchange type - direct|fanout|topic|x-custom")
 	consumerTag  = flag.String("consumer-tag", "simple-consumer", "AMQP consumer tag (should not be blank)")
 )
@@ -82,12 +82,12 @@ func main() {
 	flag.Parse()
 	if *production {
 		config.Prod()
-		mandrill.APIkey = "tKcqIfanhMnYrTtGrDixBA"
+	} else if *staging {
+		config.Prod()
 	} else {
 		config.Test()
-		mandrill.APIkey = "AiZeQTNtBDY4omKvajApkg"
 	}
-	handlers.Setup()
+	handlers.Setup(*production)
 	models.Setup(*production)
 	conn, err := amqp.Dial(config.EmailBroker)
 	if err != nil {

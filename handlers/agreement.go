@@ -7,6 +7,7 @@ import (
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
+	"math/rand"
 	"strconv"
 	"time"
 )
@@ -61,19 +62,12 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 	if messageBytes, ok := body["message"]; ok {
 		json.Unmarshal(*messageBytes, &message)
 	}
+	client := getUserInfo(agreement.ClientID)
+	freelancer := getUserInfo(agreement.FreelancerID)
 
-	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
-	data, _, client := createAgreementData(agreement, message, sendToFreelancer)
+	sender, recipient := agreement.CurrentStatus.WhoIsSenderRecipient(client, freelancer)
 
-	mail := new(models.Mail)
-	status := agreement.CurrentStatus
-	if status.UserID == agreement.FreelancerID {
-		data["SENDER_FULLNAME"] = data["FREELANCER_FULLNAME"]
-		mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
-	} else {
-		data["SENDER_FULLNAME"] = data["CLIENT_FULLNAME"]
-		mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
-	}
+	data := createAgreementData(agreement, message, sender, recipient)
 
 	var html bytes.Buffer
 	if client.DateCreated.After(time.Now().Add(-5 * time.Minute)) {
@@ -83,12 +77,26 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 		agreementSentTpl.ExecuteTemplate(&html, "base", data)
 	}
 
-	mail.FromEmail = "reply@notifications.wurkhappy.com"
-	mail.FromName = "Wurk Happy"
+	threadID := agreement.VersionID
+	threadID += recipient.ID[0:4]
+
+	c := redisPool.Get()
+	threadMsgID := getThreadMessageID(threadID, c)
+	mail := new(models.Mail)
+	if threadMsgID != "" {
+		mail.InReplyTo = threadMsgID
+	}
+	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
+	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Just Sent You A New Agreement"
 	mail.Html = html.String()
 
-	_, err := mail.Send()
+	msgID, err := mail.Send()
+	if threadMsgID == "" {
+		comment := new(Comment)
+		comment.AgreementID = agreement.AgreementID
+		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
+	}
 	return err
 }
 
@@ -99,29 +107,36 @@ func AgreementChange(params map[string]string, body map[string]*json.RawMessage)
 	if messageBytes, ok := body["message"]; ok {
 		json.Unmarshal(*messageBytes, &message)
 	}
+	client := getUserInfo(agreement.ClientID)
+	freelancer := getUserInfo(agreement.FreelancerID)
 
-	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
-	data, _, _ := createAgreementData(agreement, message, sendToFreelancer)
+	sender, recipient := agreement.CurrentStatus.WhoIsSenderRecipient(client, freelancer)
 
-	mail := new(models.Mail)
-	status := agreement.CurrentStatus
-	if status.UserID == agreement.FreelancerID {
-		data["SENDER_FULLNAME"] = data["FREELANCER_FULLNAME"]
-		mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
-	} else {
-		data["SENDER_FULLNAME"] = data["CLIENT_FULLNAME"]
-		mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
-	}
+	data := createAgreementData(agreement, message, sender, recipient)
 
 	var html bytes.Buffer
 	agreementChangeTpl.ExecuteTemplate(&html, "base", data)
 
-	mail.FromEmail = "reply@notifications.wurkhappy.com"
-	mail.FromName = "Wurk Happy"
+	threadID := agreement.VersionID
+	threadID += recipient.ID[0:4]
+
+	c := redisPool.Get()
+	threadMsgID := getThreadMessageID(threadID, c)
+	mail := new(models.Mail)
+	if threadMsgID != "" {
+		mail.InReplyTo = threadMsgID
+	}
+	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
+	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Requests Changes to Your Agreement"
 	mail.Html = html.String()
 
-	_, err := mail.Send()
+	msgID, err := mail.Send()
+	if threadMsgID == "" {
+		comment := new(Comment)
+		comment.AgreementID = agreement.AgreementID
+		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
+	}
 	return err
 }
 
@@ -132,28 +147,36 @@ func AgreementAccept(params map[string]string, body map[string]*json.RawMessage)
 	if messageBytes, ok := body["message"]; ok {
 		json.Unmarshal(*messageBytes, &message)
 	}
+	client := getUserInfo(agreement.ClientID)
+	freelancer := getUserInfo(agreement.FreelancerID)
 
-	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
-	data, _, _ := createAgreementData(agreement, message, sendToFreelancer)
-	mail := new(models.Mail)
-	status := agreement.CurrentStatus
-	if status.UserID == agreement.FreelancerID {
-		data["SENDER_FULLNAME"] = data["FREELANCER_FULLNAME"]
-		mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
-	} else {
-		data["SENDER_FULLNAME"] = data["CLIENT_FULLNAME"]
-		mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
-	}
+	sender, recipient := agreement.CurrentStatus.WhoIsSenderRecipient(client, freelancer)
+
+	data := createAgreementData(agreement, message, sender, recipient)
 
 	var html bytes.Buffer
 	agreementAcceptTpl.ExecuteTemplate(&html, "base", data)
 
-	mail.FromEmail = "reply@notifications.wurkhappy.com"
-	mail.FromName = "Wurk Happy"
+	threadID := agreement.VersionID
+	threadID += recipient.ID[0:4]
+
+	c := redisPool.Get()
+	threadMsgID := getThreadMessageID(threadID, c)
+	mail := new(models.Mail)
+	if threadMsgID != "" {
+		mail.InReplyTo = threadMsgID
+	}
+	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
+	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Accepted Your Agreement"
 	mail.Html = html.String()
 
-	_, err := mail.Send()
+	msgID, err := mail.Send()
+	if threadMsgID == "" {
+		comment := new(Comment)
+		comment.AgreementID = agreement.AgreementID
+		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
+	}
 	return err
 }
 
@@ -164,30 +187,37 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 	if messageBytes, ok := body["message"]; ok {
 		json.Unmarshal(*messageBytes, &message)
 	}
+	client := getUserInfo(agreement.ClientID)
+	freelancer := getUserInfo(agreement.FreelancerID)
 
-	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
-	data, _, _ := createAgreementData(agreement, message, sendToFreelancer)
-	mail := new(models.Mail)
-	status := agreement.CurrentStatus
-	if status.UserID == agreement.FreelancerID {
-		data["SENDER_FULLNAME"] = data["FREELANCER_FULLNAME"]
-		mail.To = []models.To{{Email: data["CLIENT_EMAIL"].(string), Name: data["CLIENT_FULLNAME"].(string)}}
-	} else {
-		data["SENDER_FULLNAME"] = data["CLIENT_FULLNAME"]
-		mail.To = []models.To{{Email: data["FREELANCER_EMAIL"].(string), Name: data["FREELANCER_FULLNAME"].(string)}}
-	}
+	sender, recipient := agreement.CurrentStatus.WhoIsSenderRecipient(client, freelancer)
+
+	data := createAgreementData(agreement, message, sender, recipient)
 
 	var html bytes.Buffer
 	agreementDisputeTpl.ExecuteTemplate(&html, "base", data)
 
-	mail.FromEmail = "reply@notifications.wurkhappy.com"
-	mail.FromName = "Wurk Happy"
+	threadID := agreement.VersionID
+	threadID += recipient.ID[0:4]
+
+	c := redisPool.Get()
+	threadMsgID := getThreadMessageID(threadID, c)
+	mail := new(models.Mail)
+	if threadMsgID != "" {
+		mail.InReplyTo = threadMsgID
+	}
+	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
+	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Disputed Your Request"
 	mail.Html = html.String()
 
-	_, err := mail.Send()
+	msgID, err := mail.Send()
+	if threadMsgID == "" {
+		comment := new(Comment)
+		comment.AgreementID = agreement.AgreementID
+		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
+	}
 	return err
-
 }
 
 type Agreement struct {
@@ -215,6 +245,13 @@ type Status struct {
 	UserID             string    `json:"userID"`
 }
 
+func (s *Status) WhoIsSenderRecipient(user1 *User, user2 *User) (sender *User, recipient *User) {
+	if s.UserID == user1.ID {
+		return user1, user2
+	}
+	return user2, user1
+}
+
 func (a *Agreement) getTotalCost() float64 {
 	var totalCost float64
 	workItems := a.WorkItems
@@ -224,31 +261,20 @@ func (a *Agreement) getTotalCost() float64 {
 	return totalCost
 }
 
-func createAgreementData(agreement *Agreement, message string, toFreelancer bool) (data map[string]interface{}, freelancer *User, client *User) {
+func createAgreementData(agreement *Agreement, message string, sender *User, recipient *User) (data map[string]interface{}) {
 	agreementID := agreement.VersionID
-	clientID := agreement.ClientID
-	freelancerID := agreement.FreelancerID
 	path := "/agreement/v/" + agreementID
-	client = getUserInfo(clientID)
-	freelancer = getUserInfo(freelancerID)
 	expiration := 60 * 60 * 24 * 7 * 4
-	var signatureParams string
-	if toFreelancer {
-		signatureParams = createSignatureParams(freelancerID, path, expiration)
-	} else {
-		signatureParams = createSignatureParams(clientID, path, expiration)
-	}
+	signatureParams := createSignatureParams(recipient.ID, path, expiration)
 
 	m := map[string]interface{}{
 		"AGREEMENT_LINK":         config.WebServer + path + "?" + signatureParams,
 		"AGREEMENT_NAME":         agreement.Title,
-		"CLIENT_FULLNAME":        client.getEmailOrName(),
-		"FREELANCER_FULLNAME":    freelancer.getEmailOrName(),
+		"SENDER_FULLNAME":        sender.getEmailOrName(),
+		"RECIPIENT_FULLNAME":     recipient.getEmailOrName(),
 		"MESSAGE":                message,
 		"AGREEMENT_NUM_PAYMENTS": strconv.Itoa(len(agreement.WorkItems)),
 		"AGREEMENT_COST":         fmt.Sprintf("%g", agreement.getTotalCost()),
-		"CLIENT_EMAIL":           client.Email,
-		"FREELANCER_EMAIL":       freelancer.Email,
 	}
-	return m, freelancer, client
+	return m
 }

@@ -7,8 +7,14 @@ import (
 )
 
 var redisPool *redis.Pool
+var whName string
 
-func Setup() {
+func Setup(production bool) {
+	if production {
+		whName = "reply"
+	} else {
+		whName = "test"
+	}
 	var password string
 	var network string = "tcp"
 	var address string = config.WebAppRedis

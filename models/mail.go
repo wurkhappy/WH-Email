@@ -10,8 +10,8 @@ import (
 
 var production bool
 
-func Setup(production bool) {
-	production = production
+func Setup(prod bool) {
+	production = prod
 }
 
 type Mail struct {
@@ -42,6 +42,7 @@ type MailGunResp struct {
 }
 
 func (mail *Mail) Send() (msgID string, erro error) {
+	mail.FromName = "Wurk Happy"
 	var err error
 	buf := new(bytes.Buffer)
 	w := multipart.NewWriter(buf)
@@ -73,7 +74,8 @@ func (mail *Mail) Send() (msgID string, erro error) {
 	// 	}
 	// }
 	if mail.InReplyTo != "" {
-		w.WriteField("h:In-Reply-To", "reply@notifications.wurkhappy.com")
+		w.WriteField("h:In-Reply-To", mail.InReplyTo)
+		w.WriteField("h:References", mail.InReplyTo)
 	}
 	for _, attachment := range mail.Attachments {
 		attach, err := w.CreateFormFile("attachment", attachment.Name)
