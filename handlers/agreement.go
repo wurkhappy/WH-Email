@@ -61,12 +61,11 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 	if messageBytes, ok := body["message"]; ok {
 		json.Unmarshal(*messageBytes, &message)
 	}
-	client = getUserInfo(agreement.ClientID)
-	freelancer = getUserInfo(agreement.FreelancerID)
+	client := getUserInfo(agreement.ClientID)
+	freelancer := getUserInfo(agreement.FreelancerID)
 
 	sender, recipient := agreement.CurrentStatus.WhoIsSenderRecipient(client, freelancer)
 
-	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
 	data := createAgreementData(agreement, message, sender, recipient)
 
 	var html bytes.Buffer
@@ -94,12 +93,11 @@ func AgreementChange(params map[string]string, body map[string]*json.RawMessage)
 	if messageBytes, ok := body["message"]; ok {
 		json.Unmarshal(*messageBytes, &message)
 	}
-	client = getUserInfo(agreement.ClientID)
-	freelancer = getUserInfo(agreement.FreelancerID)
+	client := getUserInfo(agreement.ClientID)
+	freelancer := getUserInfo(agreement.FreelancerID)
 
 	sender, recipient := agreement.CurrentStatus.WhoIsSenderRecipient(client, freelancer)
 
-	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
 	data := createAgreementData(agreement, message, sender, recipient)
 
 	var html bytes.Buffer
@@ -122,12 +120,11 @@ func AgreementAccept(params map[string]string, body map[string]*json.RawMessage)
 	if messageBytes, ok := body["message"]; ok {
 		json.Unmarshal(*messageBytes, &message)
 	}
-	client = getUserInfo(agreement.ClientID)
-	freelancer = getUserInfo(agreement.FreelancerID)
+	client := getUserInfo(agreement.ClientID)
+	freelancer := getUserInfo(agreement.FreelancerID)
 
 	sender, recipient := agreement.CurrentStatus.WhoIsSenderRecipient(client, freelancer)
 
-	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
 	data := createAgreementData(agreement, message, sender, recipient)
 
 	var html bytes.Buffer
@@ -150,12 +147,11 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 	if messageBytes, ok := body["message"]; ok {
 		json.Unmarshal(*messageBytes, &message)
 	}
-	client = getUserInfo(agreement.ClientID)
-	freelancer = getUserInfo(agreement.FreelancerID)
+	client := getUserInfo(agreement.ClientID)
+	freelancer := getUserInfo(agreement.FreelancerID)
 
 	sender, recipient := agreement.CurrentStatus.WhoIsSenderRecipient(client, freelancer)
 
-	sendToFreelancer := agreement.DraftCreatorID != agreement.FreelancerID
 	data := createAgreementData(agreement, message, sender, recipient)
 
 	var html bytes.Buffer
@@ -198,7 +194,7 @@ type Status struct {
 }
 
 func (s *Status) WhoIsSenderRecipient(user1 *User, user2 *User) (sender *User, recipient *User) {
-	if status.UserID == user1.ID {
+	if s.UserID == user1.ID {
 		return user1, user2
 	}
 	return user2, user1

@@ -3,12 +3,10 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"github.com/garyburd/redigo/redis"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
-	"log"
 	"time"
 )
 
@@ -75,7 +73,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	threadMsgID := getThreadMessageID(tagsJoined, c)
 
 	mail := new(models.Mail)
-	if replyTo != "" {
+	if threadMsgID != "" {
 		mail.InReplyTo = threadMsgID
 	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.createFullName()}}
@@ -89,17 +87,17 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	}
 
 	if threadMsgID == "" {
-		saveMessageInfo(threadID, msgID, comment, sender, recipient)
+		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
 	}
 	return nil
 }
 
 func getThreadMessageID(threadID string, connection redis.Conn) string {
-	msgID, _ := redis.String(c.Do("GET", tagsJoined))
+	msgID, _ := redis.String(connection.Do("GET", threadID))
 	return msgID
 }
 
-func saveMessageInfo(threadID string, msgID string, comment *Comment, sender *User, recipient *User) error {
+func saveMessageInfo(threadID string, msgID string, comment *Comment, sender *User, recipient *User, c redis.Conn) error {
 	jsonComment, _ := json.Marshal(comment)
 	if _, err := c.Do("HMSET", msgID, "comment", jsonComment,
 		"user1Email", recipient.Email, "user1ID", recipient.ID,
@@ -109,4 +107,5 @@ func saveMessageInfo(threadID string, msgID string, comment *Comment, sender *Us
 	if _, err := c.Do("SET", threadID, msgID); err != nil {
 		return err
 	}
+	return nil
 }
