@@ -85,8 +85,8 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 	if threadMsgID != "" {
 		mail.InReplyTo = threadMsgID
 	}
-	mail.To = []models.To{{Email: sender.Email, Name: sender.getEmailOrName()}}
-	mail.FromEmail = "reply@notifications.wurkhappy.com"
+	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
+	mail.FromEmail = "test@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Just Sent You A New Agreement"
 	mail.Html = html.String()
 
@@ -117,7 +117,7 @@ func AgreementChange(params map[string]string, body map[string]*json.RawMessage)
 	agreementChangeTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
-	mail.To = []models.To{{Email: sender.Email, Name: sender.getEmailOrName()}}
+	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
 	mail.FromEmail = "reply@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Requests Changes to Your Agreement"
 	mail.Html = html.String()
@@ -144,7 +144,7 @@ func AgreementAccept(params map[string]string, body map[string]*json.RawMessage)
 	agreementAcceptTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
-	mail.To = []models.To{{Email: sender.Email, Name: sender.getEmailOrName()}}
+	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
 	mail.FromEmail = "reply@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Accepted Your Agreement"
 	mail.Html = html.String()
@@ -171,7 +171,7 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 	agreementDisputeTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
-	mail.To = []models.To{{Email: sender.Email, Name: sender.getEmailOrName()}}
+	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
 	mail.FromEmail = "reply@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Disputed Your Request"
 	mail.Html = html.String()
