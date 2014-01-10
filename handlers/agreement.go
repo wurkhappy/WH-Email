@@ -76,13 +76,26 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 		agreementSentTpl.ExecuteTemplate(&html, "base", data)
 	}
 
+	threadID := agreement.VersionID
+	threadID += recipient.ID[0:4]
+
+	c := redisPool.Get()
+	threadMsgID := getThreadMessageID(threadID, c)
 	mail := new(models.Mail)
+	if threadMsgID != "" {
+		mail.InReplyTo = threadMsgID
+	}
 	mail.To = []models.To{{Email: sender.Email, Name: sender.getEmailOrName()}}
 	mail.FromEmail = "reply@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Just Sent You A New Agreement"
 	mail.Html = html.String()
 
-	_, err := mail.Send()
+	msgID, err := mail.Send()
+	if threadMsgID == "" {
+		comment := new(Comment)
+		comment.AgreementID = agreement.AgreementID
+		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
+	}
 	return err
 }
 

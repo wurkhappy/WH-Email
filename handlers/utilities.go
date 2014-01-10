@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/garyburd/redigo/redis"
 	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mdp"
@@ -110,4 +111,22 @@ func getAgreementOwners(agreementID string) *Agreement {
 	var a *Agreement
 	json.Unmarshal(resp, &a)
 	return a
+}
+
+func getThreadMessageID(threadID string, connection redis.Conn) string {
+	msgID, _ := redis.String(connection.Do("GET", threadID))
+	return msgID
+}
+
+func saveMessageInfo(threadID string, msgID string, comment *Comment, sender *User, recipient *User, c redis.Conn) error {
+	jsonComment, _ := json.Marshal(comment)
+	if _, err := c.Do("HMSET", msgID, "comment", jsonComment,
+		"user1Email", recipient.Email, "user1ID", recipient.ID,
+		"user2Email", sender.Email, "user2ID", sender.ID); err != nil {
+		return err
+	}
+	if _, err := c.Do("SET", threadID, msgID); err != nil {
+		return err
+	}
+	return nil
 }

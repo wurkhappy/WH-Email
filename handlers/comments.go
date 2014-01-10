@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/garyburd/redigo/redis"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
@@ -68,6 +67,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	}
 	//add part of the user's ID so that it's unique for the user
 	tagsJoined += recipient.ID[0:4]
+	tagsJoined += comment.AgreementID[0:4]
 
 	c := redisPool.Get()
 	threadMsgID := getThreadMessageID(tagsJoined, c)
@@ -88,24 +88,6 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 
 	if threadMsgID == "" {
 		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
-	}
-	return nil
-}
-
-func getThreadMessageID(threadID string, connection redis.Conn) string {
-	msgID, _ := redis.String(connection.Do("GET", threadID))
-	return msgID
-}
-
-func saveMessageInfo(threadID string, msgID string, comment *Comment, sender *User, recipient *User, c redis.Conn) error {
-	jsonComment, _ := json.Marshal(comment)
-	if _, err := c.Do("HMSET", msgID, "comment", jsonComment,
-		"user1Email", recipient.Email, "user1ID", recipient.ID,
-		"user2Email", sender.Email, "user2ID", sender.ID); err != nil {
-		return err
-	}
-	if _, err := c.Do("SET", threadID, msgID); err != nil {
-		return err
 	}
 	return nil
 }
