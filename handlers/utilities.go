@@ -92,8 +92,8 @@ func Test(params map[string]string, body map[string]interface{}) error {
 	return nil
 }
 
-func getAgreement(versionID string) *Agreement {
-	resp, statusCode := sendServiceRequest("GET", config.AgreementsService, "/agreements/v/"+versionID, nil)
+func getAgreement(agreementID string) *Agreement {
+	resp, statusCode := sendServiceRequest("GET", config.AgreementsService, "/agreements/"+agreementID, nil)
 	if statusCode >= 400 {
 		return nil
 	}

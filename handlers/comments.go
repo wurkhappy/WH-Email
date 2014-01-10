@@ -39,7 +39,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	var comment *Comment
 	json.Unmarshal(*body["comment"], &comment)
 	sender := getUserInfo(comment.UserID)
-	agreement := getAgreementOwners(comment.AgreementID)
+	agreement := getAgreement(comment.AgreementID)
 	var recipientID string = agreement.ClientID
 	if agreement.ClientID == comment.UserID {
 		recipientID = agreement.FreelancerID
@@ -47,7 +47,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	recipient := getUserInfo(recipientID)
 	comment.RecipientID = recipientID
 
-	path := "/agreement/v/" + comment.AgreementVersionID
+	path := "/agreement/v/" + agreement.VersionID
 	expiration := int(time.Now().Add(time.Hour * 24 * 7 * 4).Unix())
 	signatureParams := createSignatureParams(recipientID, path, expiration)
 
