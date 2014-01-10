@@ -6,6 +6,7 @@ import (
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
+	"math/rand"
 	"time"
 )
 
@@ -13,7 +14,6 @@ var newMessageTpl *template.Template
 
 func init() {
 	newMessageTpl = template.Must(template.ParseFiles(
-		"templates/base.html",
 		"templates/new_message.html",
 	))
 }
@@ -56,9 +56,10 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 		"AGREEMENT_NAME":  agreement.Title,
 		"SENDER_FULLNAME": sender.getEmailOrName(),
 		"MESSAGE":         template.HTML(comment.Text),
+		"RANDOM":          rand.Intn(8),
 	}
 	var html bytes.Buffer
-	newMessageTpl.ExecuteTemplate(&html, "base", data)
+	newMessageTpl.ExecuteTemplate(&html, "body", data)
 
 	//join all tag IDs into a string to create a unique ID for threading
 	var tagsJoined string
