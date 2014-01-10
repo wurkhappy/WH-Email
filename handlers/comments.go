@@ -48,6 +48,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 		recipientID = agreement.FreelancerID
 	}
 	recipient := getUserInfo(recipientID)
+	comment.RecipientID = recipientID
 
 	path := "/agreement/v/" + comment.AgreementVersionID
 	expiration := int(time.Now().Add(time.Hour * 24 * 7 * 4).Unix())
@@ -71,15 +72,14 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	tagsJoined += recipient.ID[0:4]
 
 	c := redisPool.Get()
-	replyTo, _ := redis.String(c.Do("GET", tagsJoined))
+	threadMsgID := getThreadMessageID(tagsJoined, c)
 
 	mail := new(models.Mail)
 	if replyTo != "" {
-		mail.InReplyTo = replyTo
+		mail.InReplyTo = threadMsgID
 	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.createFullName()}}
 	mail.FromEmail = "test" + tagsJoined[0:2] + "@notifications.wurkhappy.com"
-	mail.FromName = "Wurk Happy"
 	mail.Subject = sender.getEmailOrName() + " Has Just Sent You A New Message"
 	mail.Html = html.String()
 
@@ -87,22 +87,26 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	if err != nil {
 		return err
 	}
-	fmt.Println(msgID)
-	comment.RecipientID = recipientID
-	jsonComment, _ := json.Marshal(comment)
 
-	if replyTo == "" {
-		if _, err := c.Do("HMSET", msgID, "comment", jsonComment,
-			"user1Email", recipient.Email, "user1ID", recipient.ID,
-			"user2Email", sender.Email, "user2ID", sender.ID); err != nil {
-			log.Panic(err)
-		}
-		// if _, err := c.Do("SET", msgID, jsonComment); err != nil {
-		// 	log.Panic(err)
-		// }
-		if _, err := c.Do("SET", tagsJoined, msgID); err != nil {
-			log.Panic(err)
-		}
+	if threadMsgID == "" {
+		saveMessageInfo(threadID, msgID, comment, sender, recipient)
 	}
 	return nil
+}
+
+func getThreadMessageID(threadID string, connection redis.Conn) string {
+	msgID, _ := redis.String(c.Do("GET", tagsJoined))
+	return msgID
+}
+
+func saveMessageInfo(threadID string, msgID string, comment *Comment, sender *User, recipient *User) error {
+	jsonComment, _ := json.Marshal(comment)
+	if _, err := c.Do("HMSET", msgID, "comment", jsonComment,
+		"user1Email", recipient.Email, "user1ID", recipient.ID,
+		"user2Email", sender.Email, "user2ID", sender.ID); err != nil {
+		return err
+	}
+	if _, err := c.Do("SET", threadID, msgID); err != nil {
+		return err
+	}
 }

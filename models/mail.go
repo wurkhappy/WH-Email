@@ -42,6 +42,7 @@ type MailGunResp struct {
 }
 
 func (mail *Mail) Send() (msgID string, erro error) {
+	mail.FromName = "Wurk Happy"
 	var err error
 	buf := new(bytes.Buffer)
 	w := multipart.NewWriter(buf)
