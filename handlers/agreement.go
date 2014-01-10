@@ -7,6 +7,7 @@ import (
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
+	"math/rand"
 	"strconv"
 	"time"
 )
@@ -86,7 +87,7 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 		mail.InReplyTo = threadMsgID
 	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + "@notifications.wurkhappy.com"
+	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Just Sent You A New Agreement"
 	mail.Html = html.String()
 
@@ -126,7 +127,7 @@ func AgreementChange(params map[string]string, body map[string]*json.RawMessage)
 		mail.InReplyTo = threadMsgID
 	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + "@notifications.wurkhappy.com"
+	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Requests Changes to Your Agreement"
 	mail.Html = html.String()
 
@@ -166,7 +167,7 @@ func AgreementAccept(params map[string]string, body map[string]*json.RawMessage)
 		mail.InReplyTo = threadMsgID
 	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + "@notifications.wurkhappy.com"
+	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Accepted Your Agreement"
 	mail.Html = html.String()
 
@@ -206,7 +207,7 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 		mail.InReplyTo = threadMsgID
 	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + "@notifications.wurkhappy.com"
+	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Disputed Your Request"
 	mail.Html = html.String()
 

@@ -8,6 +8,7 @@ import (
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
+	"math/rand"
 	"strconv"
 	"time"
 )
@@ -78,7 +79,7 @@ func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) 
 		mail.InReplyTo = threadMsgID
 	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + "@notifications.wurkhappy.com"
+	mail.FromEmail = whName + payment.ID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " requests payment"
 	mail.Html = html.String()
 	mail.Attachments = append(mail.Attachments, &models.Attachment{Type: "application/pdf", Name: "Invoice.pdf", Content: string(pdfResp)})
@@ -125,7 +126,7 @@ func PaymentAccepted(params map[string]string, body map[string]*json.RawMessage)
 	}
 
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + "@notifications.wurkhappy.com"
+	mail.FromEmail = whName + payment.ID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = sender.getEmailOrName() + " Just Paid You"
 	mail.Html = html.String()
 
@@ -171,7 +172,7 @@ func PaymentSent(params map[string]string, body map[string]*json.RawMessage) err
 	}
 
 	mail.To = []models.To{{Email: sender.Email, Name: sender.getEmailOrName()}}
-	mail.FromEmail = whName + "@notifications.wurkhappy.com"
+	mail.FromEmail = whName + payment.ID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = "You just paid " + recipient.getEmailOrName()
 	mail.Html = html.String()
 
@@ -218,7 +219,7 @@ func PaymentReject(params map[string]string, body map[string]*json.RawMessage) e
 	}
 
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + "@notifications.wurkhappy.com"
+	mail.FromEmail = whName + payment.ID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = sender.getEmailOrName() + " Has Disputed Your Request"
 	mail.Html = html.String()
 
@@ -286,6 +287,7 @@ func createPaymentData(agreement *Agreement, payment *Payment, message string, s
 		"AGREEMENT_LINK":         config.WebServer + path + "?" + signatureParams,
 		"AGREEMENT_NAME":         agreement.Title,
 		"SENDER_FULLNAME":        sender.getEmailOrName(),
+		"RECIPIENT_FULLNAME":     recipient.getEmailOrName(),
 		"MESSAGE":                message,
 		"AGREEMENT_NUM_PAYMENTS": strconv.Itoa(len(agreement.WorkItems)),
 		"AGREEMENT_COST":         fmt.Sprintf("%g", agreement.getTotalCost()),
