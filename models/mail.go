@@ -10,8 +10,8 @@ import (
 
 var production bool
 
-func Setup(production bool) {
-	production = production
+func Setup(prod bool) {
+	production = prod
 }
 
 type Mail struct {
