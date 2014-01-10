@@ -15,7 +15,7 @@ var newMessageTpl *template.Template
 
 func init() {
 	newMessageTpl = template.Must(template.ParseFiles(
-		"templates/base.html",
+		"templates/comments_base.html",
 		"templates/new_message.html",
 	))
 }
