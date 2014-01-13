@@ -48,12 +48,12 @@ func createFullName(user map[string]interface{}) string {
 	return fullname
 }
 
-func signURL(userID, path, method string, expiration int) string {
+func signURL(userID, path, method string, expiration int, verified bool) string {
 	tkn, _ := uuid.NewV4()
 	token := tkn.String()
 	expirationDate := int(time.Now().Add(time.Duration(expiration) * time.Second).Unix())
 	c := redisPool.Get()
-	if _, err := c.Do("HMSET", token, "path", path, "method", method, "expiration", expirationDate, "userID", userID); err != nil {
+	if _, err := c.Do("HMSET", token, "path", path, "method", method, "expiration", expirationDate, "userID", userID, "verified", verified); err != nil {
 		log.Panic(err)
 	}
 
@@ -63,8 +63,8 @@ func signURL(userID, path, method string, expiration int) string {
 
 	return token
 }
-func createSignatureParams(userID, path string, expiration int) string {
-	token := signURL(userID, path, "GET", expiration)
+func createSignatureParams(userID, path string, expiration int, verified bool) string {
+	token := signURL(userID, path, "GET", expiration, verified)
 	return "token=" + token
 }
 

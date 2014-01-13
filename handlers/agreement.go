@@ -265,7 +265,7 @@ func createAgreementData(agreement *Agreement, message string, sender *User, rec
 	agreementID := agreement.VersionID
 	path := "/agreement/v/" + agreementID
 	expiration := 60 * 60 * 24 * 7 * 4
-	signatureParams := createSignatureParams(recipient.ID, path, expiration)
+	signatureParams := createSignatureParams(recipient.ID, path, expiration, recipient.IsVerified)
 
 	m := map[string]interface{}{
 		"AGREEMENT_LINK":         config.WebServer + path + "?" + signatureParams,

@@ -49,7 +49,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 
 	path := "/agreement/v/" + agreement.VersionID
 	expiration := int(time.Now().Add(time.Hour * 24 * 7 * 4).Unix())
-	signatureParams := createSignatureParams(recipientID, path, expiration)
+	signatureParams := createSignatureParams(recipientID, path, expiration, recipient.IsVerified)
 
 	data := map[string]interface{}{
 		"AGREEMENT_LINK":  config.WebServer + path + "?" + signatureParams,

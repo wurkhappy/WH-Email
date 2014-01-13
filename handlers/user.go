@@ -32,7 +32,7 @@ func ConfirmSignup(params map[string]string, body map[string]*json.RawMessage) e
 
 	path := "/user/" + userID + "/verify"
 	expiration := int(time.Now().Add(time.Hour * 24 * 5).Unix())
-	signatureParams := createSignatureParams(userID, path, expiration)
+	signatureParams := createSignatureParams(userID, path, expiration, user.IsVerified)
 
 	data := map[string]interface{}{
 		"SIGNUP_LINK": config.WebServer + path + "?" + signatureParams,
@@ -59,7 +59,7 @@ func ForgotPassword(params map[string]string, body map[string]*json.RawMessage) 
 
 	path := "/user/new-password"
 	expiration := int(time.Now().Add(time.Hour * 1).Unix())
-	signatureParams := createSignatureParams(userID, path, expiration)
+	signatureParams := createSignatureParams(userID, path, expiration, user.IsVerified)
 
 	data := map[string]interface{}{
 		"PASSWORD_RESET_LINK": config.WebServer + path + "?" + signatureParams,

@@ -274,7 +274,7 @@ func createPaymentData(agreement *Agreement, payment *Payment, message string, s
 	agreementID := agreement.VersionID
 	path := "/agreement/v/" + agreementID
 	expiration := 60 * 60 * 24 * 7 * 4
-	signatureParams := createSignatureParams(recipient.ID, path, expiration)
+	signatureParams := createSignatureParams(recipient.ID, path, expiration, recipient.IsVerified)
 
 	var paymentAmount float64
 	for _, paymentItem := range payment.PaymentItems {

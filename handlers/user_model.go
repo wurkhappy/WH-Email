@@ -12,6 +12,7 @@ type User struct {
 	FirstName   string    `json:"firstName"`
 	LastName    string    `json:"lastName"`
 	DateCreated time.Time `json:"dateCreated"`
+	IsVerified  bool      `json:"isVerified"`
 }
 
 func (u *User) getEmailOrName() string {
