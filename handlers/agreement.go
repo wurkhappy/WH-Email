@@ -19,8 +19,13 @@ var agreementDisputeTpl *template.Template
 var agreementRequestTpl *template.Template
 var agreementSentTpl *template.Template
 var agreementVoidedTpl *template.Template
+var agreementSummaryTpl *template.Template
 
 func init() {
+	formatDate := func(date time.Time) string {
+		return date.Format("Jan 2, 2006")
+	}
+	var err error
 	newAgreementTpl = template.Must(template.ParseFiles(
 		"templates/base.html",
 		"templates/agreement_new_user.html",
@@ -53,6 +58,10 @@ func init() {
 		"templates/base.html",
 		"templates/agreement_voided.html",
 	))
+	agreementSummaryTpl, err = template.New("agreement_summary.html").Funcs(template.FuncMap{"formatDate": formatDate, "unescape": unescaped}).ParseFiles(
+		"templates/agreement_summary.html",
+	)
+	fmt.Println(err)
 }
 
 func NewAgreement(params map[string]string, body map[string]*json.RawMessage) error {
@@ -77,6 +86,14 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 		agreementSentTpl.ExecuteTemplate(&html, "base", data)
 	}
 
+	var summaryHTML bytes.Buffer
+	dataSummary := map[string]interface{}{
+		"agreement":   agreement,
+		"totalAmount": data["AGREEMENT_COST"],
+	}
+	err := agreementSummaryTpl.Execute(&summaryHTML, dataSummary)
+	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", summaryHTML.Bytes())
+
 	threadID := agreement.VersionID
 	threadID += recipient.ID[0:4]
 
@@ -90,6 +107,7 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Just Sent You A New Agreement"
 	mail.Html = html.String()
+	mail.Attachments = append(mail.Attachments, &models.Attachment{Type: "application/pdf", Name: "Agreement.pdf", Content: string(pdfResp)})
 
 	msgID, err := mail.Send()
 	if threadMsgID == "" {
@@ -221,16 +239,19 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 }
 
 type Agreement struct {
-	AgreementID    string     `json:"agreementID"`
-	VersionID      string     `json:"versionID" bson:"_id"`
-	Version        float64    `json:"version"`
-	ClientID       string     `json:"clientID"`
-	FreelancerID   string     `json:"freelancerID"`
-	Title          string     `json:"title"`
-	Payments       []*Payment `json:"payments"`
-	WorkItems      WorkItems  `json:"workItems"`
-	DraftCreatorID string     `json:"draftCreatorID"`
-	CurrentStatus  *Status    `json:"currentStatus"`
+	AgreementID         string     `json:"agreementID"`
+	VersionID           string     `json:"versionID" bson:"_id"`
+	Version             float64    `json:"version"`
+	ClientID            string     `json:"clientID"`
+	FreelancerID        string     `json:"freelancerID"`
+	Title               string     `json:"title"`
+	Payments            []*Payment `json:"payments"`
+	WorkItems           WorkItems  `json:"workItems"`
+	DraftCreatorID      string     `json:"draftCreatorID"`
+	CurrentStatus       *Status    `json:"currentStatus"`
+	ProposedServices    string     `json:"proposedServices"`
+	AcceptsCreditCard   bool       `json:"acceptsCreditCard"`
+	AcceptsBankTransfer bool       `json:"acceptsBankTransfer"`
 }
 
 type Status struct {

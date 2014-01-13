@@ -254,6 +254,7 @@ type WorkItem struct {
 	Title        string       `json:"title"`
 	ScopeItems   []*ScopeItem `json:"scopeItems"`
 	DateExpected time.Time    `json:"dateExpected"`
+	Required     bool         `json:"required"`
 }
 type WorkItems []*WorkItem
 

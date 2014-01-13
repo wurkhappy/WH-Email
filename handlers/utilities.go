@@ -6,6 +6,7 @@ import (
 	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mdp"
+	"html/template"
 	"log"
 	"time"
 )
@@ -15,9 +16,11 @@ type ServiceResp struct {
 	Body       []byte  `json:"body"`
 }
 
+func unescaped(x string) interface{} { return template.HTML(x) }
+
 func sendServiceRequest(method, service, path string, body []byte) (response []byte, statusCode int) {
 	client := mdp.NewClient(config.MDPBroker, false)
-	client.Timeout = 2 * time.Second
+	client.Timeout = 10 * time.Second
 	defer client.Close()
 	m := map[string]interface{}{
 		"Method": method,
