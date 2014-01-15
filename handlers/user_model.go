@@ -7,12 +7,13 @@ import (
 )
 
 type User struct {
-	ID          string    `json:"id"`
-	Email       string    `json:"email"`
-	FirstName   string    `json:"firstName"`
-	LastName    string    `json:"lastName"`
-	DateCreated time.Time `json:"dateCreated"`
-	IsVerified  bool      `json:"isVerified"`
+	ID           string    `json:"id"`
+	Email        string    `json:"email"`
+	FirstName    string    `json:"firstName"`
+	LastName     string    `json:"lastName"`
+	DateCreated  time.Time `json:"dateCreated"`
+	IsVerified   bool      `json:"isVerified"`
+	IsRegistered bool      `json:"isRegistered"`
 }
 
 func (u *User) getEmailOrName() string {
