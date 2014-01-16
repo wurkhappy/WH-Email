@@ -7,6 +7,7 @@ import (
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
 	"math/rand"
+	"strings"
 	"time"
 )
 
@@ -63,8 +64,21 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 
 	//join all tag IDs into a string to create a unique ID for threading
 	var tagsJoined string
-	for _, tag := range comment.Tags {
+	var tagsSubject string
+	tagsLength := len(comment.Tags)
+	for i, tag := range comment.Tags {
 		tagsJoined += tag.ID
+		if tagsLength-1 == i && tagsLength > 1 {
+			tagsSubject += " and " + tag.Name
+		} else if i != 0 {
+			tagsSubject += ", " + tag.Name
+		} else {
+			tagsSubject = strings.ToUpper(tag.Name[0:1]) + tag.Name[1:len(tag.Name)]
+		}
+
+	}
+	if tagsSubject == "" {
+		tagsSubject = agreement.Title
 	}
 	//add part of the user's ID so that it's unique for the user
 	tagsJoined += recipient.ID[0:4]
@@ -79,7 +93,7 @@ func SendComment(params map[string]string, body map[string]*json.RawMessage) err
 	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.createFullName()}}
 	mail.FromEmail = whName + tagsJoined[0:2] + "@notifications.wurkhappy.com"
-	mail.Subject = sender.getEmailOrName() + " Has Just Sent You A New Message"
+	mail.Subject = tagsSubject
 	mail.Html = html.String()
 
 	msgID, err := mail.Send()
