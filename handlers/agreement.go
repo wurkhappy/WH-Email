@@ -91,6 +91,7 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 		"totalAmount": data["AGREEMENT_COST"],
 	}
 	err := agreementSummaryTpl.Execute(&summaryHTML, dataSummary)
+	fmt.Println(config.PDFService)
 	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", summaryHTML.Bytes())
 
 	threadID := agreement.VersionID
