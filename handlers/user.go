@@ -66,7 +66,7 @@ func ForgotPassword(params map[string]string, body map[string]*json.RawMessage) 
 		"USER_FULLNAME":       user.createFullName(),
 	}
 	var html bytes.Buffer
-	confirmSignupTpl.ExecuteTemplate(&html, "base", data)
+	passwordResetTpl.ExecuteTemplate(&html, "base", data)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: email, Name: user.createFullName()}}
