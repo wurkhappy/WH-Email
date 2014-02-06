@@ -87,11 +87,13 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 
 	var summaryHTML bytes.Buffer
 	dataSummary := map[string]interface{}{
-		"agreement":          agreement,
-		"totalAmount":        data["AGREEMENT_COST"],
-		"SENDER_FULLNAME":    data["SENDER_FULLNAME"],
-		"RECIPIENT_FULLNAME": data["RECIPIENT_FULLNAME"],
-		"DATE_CREATED":       time.Now().Format("Jan 2, 2006"),
+		"agreement":           agreement,
+		"totalAmount":         data["AGREEMENT_COST"],
+		"SENDER_FULLNAME":     data["SENDER_FULLNAME"],
+		"RECIPIENT_FULLNAME":  data["RECIPIENT_FULLNAME"],
+		"FREELANCER_FULLNAME": freelancer.getEmailOrName(),
+		"CLIENT_FULLNAME":     client.getEmailOrName(),
+		"DATE_CREATED":        time.Now().Format("Jan 2, 2006"),
 	}
 	err := agreementSummaryTpl.Execute(&summaryHTML, dataSummary)
 	fmt.Println(config.PDFService)
