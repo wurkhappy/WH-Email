@@ -242,19 +242,24 @@ func AgreementReject(params map[string]string, body map[string]*json.RawMessage)
 }
 
 type Agreement struct {
-	AgreementID         string     `json:"agreementID"`
-	VersionID           string     `json:"versionID" bson:"_id"`
-	Version             float64    `json:"version"`
-	ClientID            string     `json:"clientID"`
-	FreelancerID        string     `json:"freelancerID"`
-	Title               string     `json:"title"`
-	Payments            []*Payment `json:"payments"`
-	WorkItems           WorkItems  `json:"workItems"`
-	DraftCreatorID      string     `json:"draftCreatorID"`
-	CurrentStatus       *Status    `json:"currentStatus"`
-	ProposedServices    string     `json:"proposedServices"`
-	AcceptsCreditCard   bool       `json:"acceptsCreditCard"`
-	AcceptsBankTransfer bool       `json:"acceptsBankTransfer"`
+	AgreementID         string    `json:"agreementID,omitempty"`
+	VersionID           string    `json:"versionID,omitempty"` //tracks agreements across versions
+	Version             int       `json:"version"`
+	ClientID            string    `json:"clientID"`
+	FreelancerID        string    `json:"freelancerID"`
+	Title               string    `json:"title"`
+	ProposedServices    string    `json:"proposedServices"`
+	PaymentSchedule     string    `json:"paymentSchedule"`
+	Tasks               Tasks     `json:"workItems,omitempty"`
+	Payments            Payments  `json:"payments"`
+	LastModified        time.Time `json:"lastModified"`
+	Archived            bool      `json:"archived"`
+	Final               bool      `json:"final"`
+	Draft               bool      `json:"draft"`
+	DraftCreatorID      string    `json:"draftCreatorID"`
+	CurrentStatus       *Status   `json:"currentStatus"`
+	AcceptsCreditCard   bool      `json:"acceptsCreditCard"`
+	AcceptsBankTransfer bool      `json:"acceptsBankTransfer"`
 }
 
 type Status struct {
@@ -278,9 +283,9 @@ func (s *Status) WhoIsSenderRecipient(user1 *User, user2 *User) (sender *User, r
 
 func (a *Agreement) getTotalCost() float64 {
 	var totalCost float64
-	workItems := a.WorkItems
-	for _, workItem := range workItems {
-		totalCost += workItem.Amount
+	payments := a.Payments
+	for _, payment := range payments {
+		totalCost += payment.AmountDue
 	}
 	return totalCost
 }
@@ -297,7 +302,7 @@ func createAgreementData(agreement *Agreement, message string, sender *User, rec
 		"SENDER_FULLNAME":        sender.getEmailOrName(),
 		"RECIPIENT_FULLNAME":     recipient.getEmailOrName(),
 		"MESSAGE":                message,
-		"AGREEMENT_NUM_PAYMENTS": strconv.Itoa(len(agreement.WorkItems)),
+		"AGREEMENT_NUM_PAYMENTS": strconv.Itoa(len(agreement.Tasks)),
 		"AGREEMENT_COST":         fmt.Sprintf("%g", agreement.getTotalCost()),
 	}
 	return m

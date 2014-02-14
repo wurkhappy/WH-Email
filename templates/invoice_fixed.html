@@ -1,0 +1,12 @@
+{{define "invoice_fixed"}}
+<table border="0" cellspacing="0" cellpadding="0" style="width:100%; border-collapse:collapse;">
+	<tr style="background-color:#168dc7; color:white;">
+		<th style="width:70%; text-align:center;border: 1px solid black;">Item</th>
+		<th style="text-align:center;border: 1px solid black; width:30%;">Cost</th>
+	</tr>
+	{{range .Payment.PaymentItems}}
+	<td style="vertical-align:center;border: 1px solid black;height:100%; line-height:34px; text-align:center;">{{.Title}}</td>
+	<td style="vertical-align:center;border: 1px solid black;height:100%; line-height:34px; text-align:right;">{{.AmountDue}}</td>
+	{{end}}
+</table>
+{{end}}
