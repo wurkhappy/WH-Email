@@ -113,7 +113,7 @@ func main() {
 func routeMapper(d amqp.Delivery) {
 	route, params, err := router.FindRoute(d.RoutingKey)
 	if err != nil || route == nil {
-		log.Printf("first error is: %v", err)
+		log.Printf("ERROR is: %v", err)
 		return
 	}
 
@@ -127,7 +127,7 @@ func routeMapper(d amqp.Delivery) {
 
 	err = handler(params, body)
 	if err != nil {
-		log.Printf("second error is: %v", err)
+		log.Printf("ERROR is: %v", err)
 		d.Nack(false, false)
 		return
 	}
