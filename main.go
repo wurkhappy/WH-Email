@@ -122,6 +122,9 @@ func routeMapper(d amqp.Delivery) {
 	var body map[string]*json.RawMessage
 	json.Unmarshal(*m["Body"], &body)
 	handler := route.Dest.(func(map[string]string, map[string]*json.RawMessage) error)
+
+	fmt.Println(d.RoutingKey, *m["Body"])
+
 	err = handler(params, body)
 	if err != nil {
 		log.Printf("second error is: %v", err)

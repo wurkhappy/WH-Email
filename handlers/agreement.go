@@ -94,7 +94,6 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 		"DATE_CREATED":       time.Now().Format("Jan 2, 2006"),
 	}
 	err := agreementSummaryTpl.Execute(&summaryHTML, dataSummary)
-	fmt.Println(config.PDFService)
 	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", summaryHTML.Bytes())
 
 	threadID := agreement.VersionID
