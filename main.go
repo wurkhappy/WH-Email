@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"github.com/ant0ine/go-urlrouter"
 	"github.com/streadway/amqp"
 	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
@@ -16,7 +15,7 @@ import (
 var (
 	production   = flag.Bool("production", false, "Production settings")
 	staging      = flag.Bool("staging", false, "Production settings")
-	exchangeType = flag.String("exchange-type", "direct", "Exchange type - direct|fanout|topic|x-custom")
+	exchangeType = flag.String("exchange-type", "topic", "Exchange type - direct|fanout|topic|x-custom")
 	consumerTag  = flag.String("consumer-tag", "simple-consumer", "AMQP consumer tag (should not be blank)")
 )
 
@@ -91,7 +90,7 @@ func main() {
 	models.Setup(*production)
 	conn, err := amqp.Dial(config.EmailBroker)
 	if err != nil {
-		fmt.Errorf("Dial: %s", err)
+		log.Printf("Dial: %s", err)
 	}
 	c, err := rbtmq.NewConsumer(conn, config.EmailExchange, *exchangeType, config.EmailQueue, *consumerTag)
 	if err != nil {
@@ -123,7 +122,7 @@ func routeMapper(d amqp.Delivery) {
 	json.Unmarshal(*m["Body"], &body)
 	handler := route.Dest.(func(map[string]string, map[string]*json.RawMessage) error)
 
-	fmt.Println(d.RoutingKey, *m["Body"])
+	log.Println(d.RoutingKey, string(*m["Body"]))
 
 	err = handler(params, body)
 	if err != nil {
