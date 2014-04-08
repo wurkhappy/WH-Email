@@ -8,7 +8,6 @@ import (
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
-	"math/rand"
 	"strconv"
 	"time"
 )
@@ -46,25 +45,26 @@ func init() {
 	))
 }
 
-//
+type paymentAction struct {
+	VersionID string `json:"versionID"`
+	PaymentID string `json:"paymentID"`
+	UserID    string `json:"userID"`
+	Message   string `json:"message"`
+}
 
-func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) error {
-	var agreement *Agreement
-	json.Unmarshal(*body["agreement"], &agreement)
-	var payment *Payment
-	json.Unmarshal(*body["payment"], &payment)
-	var message string
-	if messageBytes, ok := body["message"]; ok {
-		json.Unmarshal(*messageBytes, &message)
-	}
-	clientID := agreement.ClientID
-	freelancerID := agreement.FreelancerID
-	client := getUserInfo(clientID)
-	freelancer := getUserInfo(freelancerID)
+func PaymentRequest(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	var err error
+	var action *paymentAction
+	json.Unmarshal(body, &action)
+	agreement, payments, tasks := getAllInfo(action.VersionID)
+	payment := payments.getPayment(action.PaymentID)
 
-	sender, recipient := payment.CurrentStatus.WhoIsSenderRecipient(freelancer, client)
+	client := getUserInfo(agreement.ClientID)
+	freelancer := getUserInfo(agreement.FreelancerID)
 
-	data := createPaymentData(agreement, payment, message, sender, recipient)
+	sender, recipient := payment.LastAction.WhoIsSenderRecipient(freelancer, client)
+
+	data := createPaymentData(agreement, payment, payments, tasks, action.Message, sender, recipient)
 	data["Payment"] = payment
 
 	var invoiceHTML bytes.Buffer
@@ -77,213 +77,154 @@ func PaymentRequest(params map[string]string, body map[string]*json.RawMessage) 
 	var html bytes.Buffer
 	paymentRequestTpl.ExecuteTemplate(&html, "base", data)
 
-	//this creates an ID for the message thread
-	threadID := payment.ID
-	threadID += recipient.ID[0:4]
-
-	//use the thread ID to save info about the message which we will later use in order to continue the thread
-	//we also use this in order to keep tags consistent across reply messages
-	c := redisPool.Get()
-	threadMsgID := getThreadMessageID(threadID, c)
 	mail := new(models.Mail)
-	if threadMsgID != "" {
-		mail.InReplyTo = threadMsgID
-	}
-
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + payment.ID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
+	mail.FromEmail = "info@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " requests payment"
 	mail.Html = html.String()
 	mail.Attachments = append(mail.Attachments, &models.Attachment{Type: "application/pdf", Name: "Invoice.pdf", Content: string(pdfResp)})
 
-	msgID, err := mail.Send()
-	if threadMsgID == "" {
-		comment := new(Comment)
-		comment.AgreementID = agreement.AgreementID
-		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
-	}
-	return err
+	_, err = mail.Send()
+	return nil, err, 200
 }
 
-func PaymentAccepted(params map[string]string, body map[string]*json.RawMessage) error {
-	var agreement *Agreement
-	json.Unmarshal(*body["agreement"], &agreement)
-	var payment *Payment
-	json.Unmarshal(*body["payment"], &payment)
-	var message string
-	if messageBytes, ok := body["message"]; ok {
-		json.Unmarshal(*messageBytes, &message)
-	}
+func PaymentAccepted(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	var err error
+	var action *paymentAction
+	json.Unmarshal(body, &action)
+	agreement, payments, tasks := getAllInfo(action.VersionID)
+	payment := payments.getPayment(action.PaymentID)
 
-	clientID := agreement.ClientID
-	freelancerID := agreement.FreelancerID
-	client := getUserInfo(clientID)
-	freelancer := getUserInfo(freelancerID)
+	client := getUserInfo(agreement.ClientID)
+	freelancer := getUserInfo(agreement.FreelancerID)
 
-	sender, recipient := payment.CurrentStatus.WhoIsSenderRecipient(freelancer, client)
+	sender, recipient := payment.LastAction.WhoIsSenderRecipient(freelancer, client)
 
-	data := createPaymentData(agreement, payment, message, sender, recipient)
+	data := createPaymentData(agreement, payment, payments, tasks, action.Message, sender, recipient)
 
 	var html bytes.Buffer
 	paymentReceivedTpl.ExecuteTemplate(&html, "base", data)
 
-	threadID := payment.ID
-	threadID += recipient.ID[0:4]
-
-	c := redisPool.Get()
-	threadMsgID := getThreadMessageID(threadID, c)
 	mail := new(models.Mail)
-	if threadMsgID != "" {
-		mail.InReplyTo = threadMsgID
-	}
-
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + payment.ID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
+	mail.FromEmail = "info@notifications.wurkhappy.com"
 	mail.Subject = sender.getEmailOrName() + " Just Paid You"
 	mail.Html = html.String()
 
-	msgID, err := mail.Send()
-	if threadMsgID == "" {
-		comment := new(Comment)
-		comment.AgreementID = agreement.AgreementID
-		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
-	}
-	return err
+	_, err = mail.Send()
+	return nil, err, 200
 }
 
-func PaymentSent(params map[string]string, body map[string]*json.RawMessage) error {
-	var agreement *Agreement
-	json.Unmarshal(*body["agreement"], &agreement)
-	var payment *Payment
-	json.Unmarshal(*body["payment"], &payment)
-	var message string
-	if messageBytes, ok := body["message"]; ok {
-		json.Unmarshal(*messageBytes, &message)
-	}
+func PaymentSent(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	var err error
+	var action *paymentAction
+	json.Unmarshal(body, &action)
+	agreement, payments, tasks := getAllInfo(action.VersionID)
+	payment := payments.getPayment(action.PaymentID)
 
-	clientID := agreement.ClientID
-	freelancerID := agreement.FreelancerID
-	client := getUserInfo(clientID)
-	freelancer := getUserInfo(freelancerID)
+	client := getUserInfo(agreement.ClientID)
+	freelancer := getUserInfo(agreement.FreelancerID)
 
-	sender, recipient := payment.CurrentStatus.WhoIsSenderRecipient(freelancer, client)
+	sender, recipient := payment.LastAction.WhoIsSenderRecipient(freelancer, client)
 
-	data := createPaymentData(agreement, payment, message, recipient, sender)
+	data := createPaymentData(agreement, payment, payments, tasks, action.Message, sender, recipient)
 
 	var html bytes.Buffer
 	paymentSentTpl.ExecuteTemplate(&html, "base", data)
 
-	threadID := payment.ID
-	threadID += sender.ID[0:4]
-
-	c := redisPool.Get()
-	threadMsgID := getThreadMessageID(threadID, c)
 	mail := new(models.Mail)
-	if threadMsgID != "" {
-		mail.InReplyTo = threadMsgID
-	}
-
 	mail.To = []models.To{{Email: sender.Email, Name: sender.getEmailOrName()}}
-	mail.FromEmail = whName + payment.ID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
+	mail.FromEmail = "info@notifications.wurkhappy.com"
 	mail.Subject = "You just paid " + recipient.getEmailOrName()
 	mail.Html = html.String()
 
-	msgID, err := mail.Send()
-	if threadMsgID == "" {
-		comment := new(Comment)
-		comment.AgreementID = agreement.AgreementID
-		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
-	}
-	return err
+	_, err = mail.Send()
+	return nil, err, 200
 
 }
 
-func PaymentReject(params map[string]string, body map[string]*json.RawMessage) error {
-	var agreement *Agreement
-	json.Unmarshal(*body["agreement"], &agreement)
-	var payment *Payment
-	json.Unmarshal(*body["payment"], &payment)
-	var message string
-	if messageBytes, ok := body["message"]; ok {
-		json.Unmarshal(*messageBytes, &message)
-	}
+func PaymentReject(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	var err error
+	var action *paymentAction
+	json.Unmarshal(body, &action)
+	agreement, payments, tasks := getAllInfo(action.VersionID)
+	payment := payments.getPayment(action.PaymentID)
 
-	clientID := agreement.ClientID
-	freelancerID := agreement.FreelancerID
-	client := getUserInfo(clientID)
-	freelancer := getUserInfo(freelancerID)
+	client := getUserInfo(agreement.ClientID)
+	freelancer := getUserInfo(agreement.FreelancerID)
 
-	sender, recipient := payment.CurrentStatus.WhoIsSenderRecipient(freelancer, client)
+	sender, recipient := payment.LastAction.WhoIsSenderRecipient(freelancer, client)
 
-	data := createPaymentData(agreement, payment, message, sender, recipient)
+	data := createPaymentData(agreement, payment, payments, tasks, action.Message, sender, recipient)
 
 	var html bytes.Buffer
 	paymentDisputeTpl.ExecuteTemplate(&html, "base", data)
 
-	threadID := payment.ID
-	threadID += recipient.ID[0:4]
-
-	c := redisPool.Get()
-	threadMsgID := getThreadMessageID(threadID, c)
 	mail := new(models.Mail)
-	if threadMsgID != "" {
-		mail.InReplyTo = threadMsgID
-	}
-
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + payment.ID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
+	mail.FromEmail = "info@notifications.wurkhappy.com"
 	mail.Subject = sender.getEmailOrName() + " Has Disputed Your Request"
 	mail.Html = html.String()
 
-	msgID, err := mail.Send()
-	if threadMsgID == "" {
-		comment := new(Comment)
-		comment.AgreementID = agreement.AgreementID
-		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
-	}
-	return err
+	_, err = mail.Send()
+	return nil, err, 200
 }
 
 type Payment struct {
-	ID            string       `json:"id"`
-	Title         string       `json:"title"`
-	DateExpected  time.Time    `json:"dateExpected"`
-	PaymentItems  PaymentItems `json:"paymentItems"`
-	CurrentStatus *Status      `json:"currentStatus"`
-	IsDeposit     bool         `json:"isDeposit"`
-	AmountDue     float64      `json:"amountDue"`
-	AmountPaid    float64      `json:"amountPaid"`
+	ID           string       `json:"id"`
+	VersionID    string       `json:"versionID"`
+	Title        string       `json:"title"`
+	DateExpected time.Time    `json:"dateExpected"`
+	PaymentItems PaymentItems `json:"paymentItems"`
+	LastAction   *Action      `json:"lastAction"`
+	IsDeposit    bool         `json:"isDeposit"`
+	AmountDue    float64      `json:"amountDue"`
+	AmountPaid   float64      `json:"amountPaid"`
 }
+
 type Payments []*Payment
 
 type PaymentItem struct {
-	WorkItemID string  `json:"workItemID"`
-	TaskID     string  `json:"taskID"`
-	Hours      float64 `json:"hours"`
-	AmountDue  float64 `json:"amountDue"`
-	Rate       float64 `json:"rate"`
-	Title      string  `json:"title"`
+	TaskID    string  `json:"taskID"`
+	SubTaskID string  `json:"subtaskID"`
+	Hours     float64 `json:"hours"`
+	AmountDue float64 `json:"amountDue"`
+	Rate      float64 `json:"rate"`
+	Title     string  `json:"title"`
 }
 
 type PaymentItems []*PaymentItem
 
 type Task struct {
 	ID           string    `json:"id"`
-	Completed    bool      `json:"completed"`
+	VersionID    string    `json:"versionID"`
 	IsPaid       bool      `json:"isPaid"`
 	Hours        float64   `json:"hours"`
-	Tasks        Tasks     `json:"scopeItems"`
+	SubTasks     []*Task   `json:"subTasks"`
 	Title        string    `json:"title"`
 	DateExpected time.Time `json:"dateExpected"`
-	Description  string    `json:"description"`
+	LastAction   *Action   `json:"lastAction"`
 }
 type Tasks []*Task
 
-type ScopeItem struct {
-	Text string `json:"text"`
+func (p Payments) getTotalCost() float64 {
+	var totalCost float64
+	for _, payment := range p {
+		totalCost += payment.AmountDue
+	}
+	return totalCost
 }
 
-func createPaymentData(agreement *Agreement, payment *Payment, message string, sender *User, recipient *User) map[string]interface{} {
+func (p Payments) getPayment(paymentID string) *Payment {
+	for _, payment := range p {
+		if payment.ID == paymentID {
+			return payment
+		}
+	}
+	return nil
+}
+
+func createPaymentData(agreement *Agreement, payment *Payment, payments Payments, tasks Tasks, message string, sender *User, recipient *User) map[string]interface{} {
 	agreementID := agreement.VersionID
 	path := "/agreement/v/" + agreementID
 	expiration := 60 * 60 * 24 * 7 * 4
@@ -295,8 +236,8 @@ func createPaymentData(agreement *Agreement, payment *Payment, message string, s
 		"SENDER_FULLNAME":        sender.getEmailOrName(),
 		"RECIPIENT_FULLNAME":     recipient.getEmailOrName(),
 		"MESSAGE":                message,
-		"AGREEMENT_NUM_PAYMENTS": strconv.Itoa(len(agreement.Tasks)),
-		"AGREEMENT_COST":         fmt.Sprintf("%g", agreement.getTotalCost()),
+		"AGREEMENT_NUM_PAYMENTS": strconv.Itoa(len(tasks)),
+		"AGREEMENT_COST":         fmt.Sprintf("%g", payments.getTotalCost()),
 		"PAYMENT_AMOUNT":         payment.AmountDue,
 		"PAYMENT_REQUESTED_DATE": time.Now().Format("01/02/2006"),
 		"WORK_ITEMS":             payment.PaymentItems,

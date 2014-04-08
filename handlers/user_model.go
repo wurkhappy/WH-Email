@@ -29,7 +29,7 @@ func getUserInfo(id string) *User {
 	if id == "" {
 		return nil
 	}
-	resp, statusCode := sendServiceRequest("GET", config.UserService, "/user/search?userid="+id, nil)
+	resp, statusCode := sendServiceRequest("GET", config.UserService, "/users?userid="+id, nil)
 	if statusCode >= 400 {
 		return nil
 	}

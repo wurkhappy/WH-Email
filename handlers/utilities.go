@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"github.com/garyburd/redigo/redis"
 	"github.com/nu7hatch/gouuid"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/mdp"
@@ -71,15 +70,6 @@ func createSignatureParams(userID, path string, expiration int, verified bool) s
 	return "token=" + token
 }
 
-func getUserMessage(body map[string]interface{}) string {
-	var userMessage string = " "
-	if msg, ok := body["message"]; ok {
-		userMessage = msg.(string)
-	}
-
-	return userMessage
-}
-
 func getEmailOrName(user map[string]interface{}) string {
 	name := createFullName(user)
 	if name == "" {
@@ -87,23 +77,6 @@ func getEmailOrName(user map[string]interface{}) string {
 	}
 
 	return name
-}
-
-func Test(params map[string]string, body map[string]interface{}) error {
-	time.Sleep(time.Second * 1)
-	log.Print(body)
-	return nil
-}
-
-func getAgreement(agreementID string) *Agreement {
-	resp, statusCode := sendServiceRequest("GET", config.AgreementsService, "/agreements/"+agreementID, nil)
-	if statusCode >= 400 {
-		return nil
-	}
-
-	var a *Agreement
-	json.Unmarshal(resp, &a)
-	return a
 }
 
 func getAgreementOwners(agreementID string) *Agreement {
@@ -114,22 +87,4 @@ func getAgreementOwners(agreementID string) *Agreement {
 	var a *Agreement
 	json.Unmarshal(resp, &a)
 	return a
-}
-
-func getThreadMessageID(threadID string, connection redis.Conn) string {
-	msgID, _ := redis.String(connection.Do("GET", threadID))
-	return msgID
-}
-
-func saveMessageInfo(threadID string, msgID string, comment *Comment, sender *User, recipient *User, c redis.Conn) error {
-	jsonComment, _ := json.Marshal(comment)
-	if _, err := c.Do("HMSET", msgID, "comment", jsonComment,
-		"user1Email", recipient.Email, "user1ID", recipient.ID,
-		"user2Email", sender.Email, "user2ID", sender.ID); err != nil {
-		return err
-	}
-	if _, err := c.Do("SET", threadID, msgID); err != nil {
-		return err
-	}
-	return nil
 }

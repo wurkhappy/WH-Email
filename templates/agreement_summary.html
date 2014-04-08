@@ -28,11 +28,11 @@ h2{
 	</div>
 	<div id="work-items-section" style="list-style-type: none;">
 		<h2 class="agreement_title" style="font-size:24px;font-weight:300;">Payment Schedule</h2>
-		{{range .agreement.WorkItems}}
+		{{range .tasks}}
       <li class="payment_milestone" style="border-top: 1px solid rgb(245, 245, 245); padding: 10px 0; margin-top: 5px;"><span style="font-weight:900;">${{.Amount}}</span> &mdash; {{.Title}} {{if .Required}}{{else}}on {{.DateExpected | formatDate}}{{end}}</li>
     	<ul>
-    		{{range .ScopeItems}}
-    		<li>{{.Text}}</li>
+    		{{range .SubTasks}}
+    		<li>{{.Title}}</li>
     			{{end}}
     	</ul>
       {{end}}

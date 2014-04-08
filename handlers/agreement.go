@@ -7,8 +7,8 @@ import (
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/models"
 	"html/template"
-	"math/rand"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -61,22 +61,35 @@ func init() {
 	agreementSummaryTpl, err = template.New("agreement_summary.html").Funcs(template.FuncMap{"formatDate": formatDate, "unescape": unescaped}).ParseFiles(
 		"templates/agreement_summary.html",
 	)
-	fmt.Println(err)
 }
 
-func NewAgreement(params map[string]string, body map[string]*json.RawMessage) error {
-	var agreement *Agreement
-	json.Unmarshal(*body["agreement"], &agreement)
-	var message string
-	if messageBytes, ok := body["message"]; ok {
-		json.Unmarshal(*messageBytes, &message)
+type agreementAction struct {
+	VersionID string `json:"versionID"`
+	UserID    string `json:"userID"`
+	Message   string `json:"message"`
+}
+
+func AgreementSubmitted(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	var action *agreementAction
+	json.Unmarshal(body, &action)
+
+	agreement, payments, tasks := getAllInfo(action.VersionID)
+
+	if agreement.Version == 1 {
+		return newAgreement(agreement, payments, tasks, action.Message)
 	}
+	return agreementChange(agreement, payments, tasks, action.Message)
+
+}
+
+func newAgreement(agreement *Agreement, payments Payments, tasks Tasks, message string) ([]byte, error, int) {
+
 	client := getUserInfo(agreement.ClientID)
 	freelancer := getUserInfo(agreement.FreelancerID)
 
-	sender, recipient := agreement.CurrentStatus.WhoIsSenderRecipient(client, freelancer)
+	sender, recipient := agreement.LastAction.WhoIsSenderRecipient(client, freelancer)
 
-	data := createAgreementData(agreement, message, sender, recipient)
+	data := createAgreementData(agreement, payments, tasks, message, sender, recipient)
 
 	var html bytes.Buffer
 	if !recipient.IsRegistered {
@@ -88,6 +101,7 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 	var summaryHTML bytes.Buffer
 	dataSummary := map[string]interface{}{
 		"agreement":          agreement,
+		"tasks":              tasks,
 		"totalAmount":        data["AGREEMENT_COST"],
 		"SENDER_FULLNAME":    data["SENDER_FULLNAME"],
 		"RECIPIENT_FULLNAME": data["RECIPIENT_FULLNAME"],
@@ -96,148 +110,90 @@ func NewAgreement(params map[string]string, body map[string]*json.RawMessage) er
 	err := agreementSummaryTpl.Execute(&summaryHTML, dataSummary)
 	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", summaryHTML.Bytes())
 
-	threadID := agreement.VersionID
-	threadID += recipient.ID[0:4]
-
-	c := redisPool.Get()
-	threadMsgID := getThreadMessageID(threadID, c)
 	mail := new(models.Mail)
-	if threadMsgID != "" {
-		mail.InReplyTo = threadMsgID
-	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
+	mail.FromEmail = "info@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Just Sent You A New Agreement"
 	mail.Html = html.String()
 	mail.Attachments = append(mail.Attachments, &models.Attachment{Type: "application/pdf", Name: "Agreement.pdf", Content: string(pdfResp)})
 
-	msgID, err := mail.Send()
-	if threadMsgID == "" {
-		comment := new(Comment)
-		comment.AgreementID = agreement.AgreementID
-		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
-	}
-	return err
+	_, err = mail.Send()
+	return nil, err, 200
 }
 
-func AgreementChange(params map[string]string, body map[string]*json.RawMessage) error {
-	var agreement *Agreement
-	json.Unmarshal(*body["agreement"], &agreement)
-	var message string
-	if messageBytes, ok := body["message"]; ok {
-		json.Unmarshal(*messageBytes, &message)
-	}
+func agreementChange(agreement *Agreement, payments Payments, tasks Tasks, message string) ([]byte, error, int) {
+	var err error
+
 	client := getUserInfo(agreement.ClientID)
 	freelancer := getUserInfo(agreement.FreelancerID)
 
-	sender, recipient := agreement.CurrentStatus.WhoIsSenderRecipient(client, freelancer)
+	sender, recipient := agreement.LastAction.WhoIsSenderRecipient(client, freelancer)
 
-	data := createAgreementData(agreement, message, sender, recipient)
+	data := createAgreementData(agreement, payments, tasks, message, sender, recipient)
 
 	var html bytes.Buffer
 	agreementChangeTpl.ExecuteTemplate(&html, "base", data)
 
-	threadID := agreement.VersionID
-	threadID += recipient.ID[0:4]
-
-	c := redisPool.Get()
-	threadMsgID := getThreadMessageID(threadID, c)
 	mail := new(models.Mail)
-	if threadMsgID != "" {
-		mail.InReplyTo = threadMsgID
-	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
+	mail.FromEmail = "info@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Requests Changes to Your Agreement"
 	mail.Html = html.String()
 
-	msgID, err := mail.Send()
-	if threadMsgID == "" {
-		comment := new(Comment)
-		comment.AgreementID = agreement.AgreementID
-		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
-	}
-	return err
+	_, err = mail.Send()
+	return nil, err, 200
 }
 
-func AgreementAccept(params map[string]string, body map[string]*json.RawMessage) error {
-	var agreement *Agreement
-	json.Unmarshal(*body["agreement"], &agreement)
-	var message string
-	if messageBytes, ok := body["message"]; ok {
-		json.Unmarshal(*messageBytes, &message)
-	}
+func AgreementAccept(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	var err error
+	var action *agreementAction
+	json.Unmarshal(body, &action)
+	agreement, payments, tasks := getAllInfo(action.VersionID)
+
 	client := getUserInfo(agreement.ClientID)
 	freelancer := getUserInfo(agreement.FreelancerID)
 
-	sender, recipient := agreement.CurrentStatus.WhoIsSenderRecipient(client, freelancer)
+	sender, recipient := agreement.LastAction.WhoIsSenderRecipient(client, freelancer)
 
-	data := createAgreementData(agreement, message, sender, recipient)
+	data := createAgreementData(agreement, payments, tasks, action.Message, sender, recipient)
 
 	var html bytes.Buffer
 	agreementAcceptTpl.ExecuteTemplate(&html, "base", data)
 
-	threadID := agreement.VersionID
-	threadID += recipient.ID[0:4]
-
-	c := redisPool.Get()
-	threadMsgID := getThreadMessageID(threadID, c)
 	mail := new(models.Mail)
-	if threadMsgID != "" {
-		mail.InReplyTo = threadMsgID
-	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
+	mail.FromEmail = "info@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Accepted Your Agreement"
 	mail.Html = html.String()
 
-	msgID, err := mail.Send()
-	if threadMsgID == "" {
-		comment := new(Comment)
-		comment.AgreementID = agreement.AgreementID
-		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
-	}
-	return err
+	_, err = mail.Send()
+	return nil, err, 200
 }
 
-func AgreementReject(params map[string]string, body map[string]*json.RawMessage) error {
-	var agreement *Agreement
-	json.Unmarshal(*body["agreement"], &agreement)
-	var message string
-	if messageBytes, ok := body["message"]; ok {
-		json.Unmarshal(*messageBytes, &message)
-	}
+func AgreementReject(params map[string]interface{}, body []byte) ([]byte, error, int) {
+	var err error
+	var action *agreementAction
+	json.Unmarshal(body, &action)
+	agreement, payments, tasks := getAllInfo(action.VersionID)
+
 	client := getUserInfo(agreement.ClientID)
 	freelancer := getUserInfo(agreement.FreelancerID)
 
-	sender, recipient := agreement.CurrentStatus.WhoIsSenderRecipient(client, freelancer)
+	sender, recipient := agreement.LastAction.WhoIsSenderRecipient(client, freelancer)
 
-	data := createAgreementData(agreement, message, sender, recipient)
+	data := createAgreementData(agreement, payments, tasks, action.Message, sender, recipient)
 
 	var html bytes.Buffer
 	agreementDisputeTpl.ExecuteTemplate(&html, "base", data)
 
-	threadID := agreement.VersionID
-	threadID += recipient.ID[0:4]
-
-	c := redisPool.Get()
-	threadMsgID := getThreadMessageID(threadID, c)
 	mail := new(models.Mail)
-	if threadMsgID != "" {
-		mail.InReplyTo = threadMsgID
-	}
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
-	mail.FromEmail = whName + agreement.VersionID[0:rand.Intn(8)] + "@notifications.wurkhappy.com"
+	mail.FromEmail = "info@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Disputed Your Request"
 	mail.Html = html.String()
 
-	msgID, err := mail.Send()
-	if threadMsgID == "" {
-		comment := new(Comment)
-		comment.AgreementID = agreement.AgreementID
-		saveMessageInfo(threadMsgID, msgID, comment, sender, recipient, c)
-	}
-	return err
+	_, err = mail.Send()
+	return nil, err, 200
 }
 
 type Agreement struct {
@@ -248,48 +204,29 @@ type Agreement struct {
 	FreelancerID        string    `json:"freelancerID"`
 	Title               string    `json:"title"`
 	ProposedServices    string    `json:"proposedServices"`
-	PaymentSchedule     string    `json:"paymentSchedule"`
-	Tasks               Tasks     `json:"workItems,omitempty"`
-	Payments            Payments  `json:"payments"`
 	LastModified        time.Time `json:"lastModified"`
-	Archived            bool      `json:"archived"`
-	Final               bool      `json:"final"`
-	Draft               bool      `json:"draft"`
-	DraftCreatorID      string    `json:"draftCreatorID"`
-	CurrentStatus       *Status   `json:"currentStatus"`
+	LastAction          *Action   `json:"lastAction"`
+	LastSubAction       *Action   `json:"lastSubAction"`
 	AcceptsCreditCard   bool      `json:"acceptsCreditCard"`
 	AcceptsBankTransfer bool      `json:"acceptsBankTransfer"`
+	Archived            bool      `json:"archived"`
 }
 
-type Status struct {
-	ID                 string    `json:"id" bson:"_id"`
-	AgreementID        string    `json:"agreementID"`
-	AgreementVersionID string    `json:"agreementVersionID"`
-	AgreementVersion   int       `json:"agreementVersion"`
-	ParentID           string    `json:"parentID"`
-	PaymentID          string    `json:"paymentID"`
-	Action             string    `json:"action"`
-	Date               time.Time `json:"date"`
-	UserID             string    `json:"userID"`
+type Action struct {
+	Name   string    `json:"name"`
+	Date   time.Time `json:"date"`
+	UserID string    `json:"userID"`
+	Type   string    `json:"type,omitempty"`
 }
 
-func (s *Status) WhoIsSenderRecipient(user1 *User, user2 *User) (sender *User, recipient *User) {
-	if s.UserID == user1.ID {
+func (a *Action) WhoIsSenderRecipient(user1 *User, user2 *User) (sender *User, recipient *User) {
+	if a.UserID == user1.ID {
 		return user1, user2
 	}
 	return user2, user1
 }
 
-func (a *Agreement) getTotalCost() float64 {
-	var totalCost float64
-	payments := a.Payments
-	for _, payment := range payments {
-		totalCost += payment.AmountDue
-	}
-	return totalCost
-}
-
-func createAgreementData(agreement *Agreement, message string, sender *User, recipient *User) (data map[string]interface{}) {
+func createAgreementData(agreement *Agreement, payments Payments, tasks []*Task, message string, sender *User, recipient *User) (data map[string]interface{}) {
 	agreementID := agreement.VersionID
 	path := "/agreement/v/" + agreementID
 	expiration := 60 * 60 * 24 * 7 * 4
@@ -301,8 +238,40 @@ func createAgreementData(agreement *Agreement, message string, sender *User, rec
 		"SENDER_FULLNAME":        sender.getEmailOrName(),
 		"RECIPIENT_FULLNAME":     recipient.getEmailOrName(),
 		"MESSAGE":                message,
-		"AGREEMENT_NUM_PAYMENTS": strconv.Itoa(len(agreement.Tasks)),
-		"AGREEMENT_COST":         fmt.Sprintf("%g", agreement.getTotalCost()),
+		"NUM_TASKS":              strconv.Itoa(len(tasks)),
+		"AGREEMENT_NUM_PAYMENTS": strconv.Itoa(len(payments)),
+		"AGREEMENT_COST":         fmt.Sprintf("%g", payments.getTotalCost()),
 	}
 	return m
+}
+
+func getAllInfo(versionID string) (*Agreement, Payments, Tasks) {
+	var agreement *Agreement
+	var payments Payments
+	var tasks Tasks
+	var wg sync.WaitGroup
+
+	wg.Add(3)
+
+	go func(w *sync.WaitGroup) {
+		reply, _ := sendServiceRequest("GET", config.AgreementsService, "/agreements/v/"+versionID, nil)
+		json.Unmarshal(reply, &agreement)
+		w.Done()
+	}(&wg)
+
+	go func(w *sync.WaitGroup) {
+		reply, _ := sendServiceRequest("GET", config.PaymentsService, "/agreements/v/"+versionID+"/payments", nil)
+		json.Unmarshal(reply, &payments)
+		w.Done()
+	}(&wg)
+
+	go func(w *sync.WaitGroup) {
+		reply, _ := sendServiceRequest("GET", config.TasksService, "/agreements/v/"+versionID+"/tasks", nil)
+		json.Unmarshal(reply, &tasks)
+		w.Done()
+	}(&wg)
+
+	wg.Wait()
+
+	return agreement, payments, tasks
 }

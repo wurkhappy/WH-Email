@@ -1,130 +1,101 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
-	"github.com/ant0ine/go-urlrouter"
+	"fmt"
 	"github.com/streadway/amqp"
-	rbtmq "github.com/wurkhappy/Rabbitmq-go-wrapper"
 	"github.com/wurkhappy/WH-Config"
 	"github.com/wurkhappy/WH-Email/handlers"
-	"github.com/wurkhappy/WH-Email/models"
 	"log"
 )
 
-var (
-	production   = flag.Bool("production", false, "Production settings")
-	staging      = flag.Bool("staging", false, "Production settings")
-	exchangeType = flag.String("exchange-type", "topic", "Exchange type - direct|fanout|topic|x-custom")
-	consumerTag  = flag.String("consumer-tag", "simple-consumer", "AMQP consumer tag (should not be blank)")
-)
+var count int
 
-//order matters so most general should go towards the bottom
-var router urlrouter.Router = urlrouter.Router{
-	Routes: []urlrouter.Route{
-		urlrouter.Route{
-			PathExp: "/user/verify",
-			Dest:    handlers.ConfirmSignup,
-		},
-		urlrouter.Route{
-			PathExp: "/user/password/forgot",
-			Dest:    handlers.ForgotPassword,
-		},
-		urlrouter.Route{
-			PathExp: "/agreement/submitted",
-			Dest:    handlers.NewAgreement,
-		},
-		urlrouter.Route{
-			PathExp: "/agreement/accepted",
-			Dest:    handlers.AgreementAccept,
-		},
-		urlrouter.Route{
-			PathExp: "/agreement/rejected",
-			Dest:    handlers.AgreementReject,
-		},
-		urlrouter.Route{
-			PathExp: "/agreement/updated",
-			Dest:    handlers.AgreementChange,
-		},
-		urlrouter.Route{
-			PathExp: "/payment/submitted",
-			Dest:    handlers.PaymentRequest,
-		},
-		urlrouter.Route{
-			PathExp: "/payment/accepted",
-			Dest:    handlers.PaymentAccepted,
-		},
-		urlrouter.Route{
-			PathExp: "/payment/rejected",
-			Dest:    handlers.PaymentReject,
-		},
-		urlrouter.Route{
-			PathExp: "/payment/sent",
-			Dest:    handlers.PaymentSent,
-		},
-		urlrouter.Route{
-			PathExp: "/test",
-			Dest:    handlers.Test,
-		},
-		urlrouter.Route{
-			PathExp: "/comment",
-			Dest:    handlers.SendComment,
-		},
-		urlrouter.Route{
-			PathExp: "/comment/reply",
-			Dest:    handlers.ProcessReply,
-		},
-	},
+var conn *amqp.Connection
+
+var production = flag.Bool("production", false, "Production settings")
+
+func failOnError(err error, msg string) {
+	if err != nil {
+		log.Fatalf("%s: %s", msg, err)
+		panic(fmt.Sprintf("%s: %s", msg, err))
+	}
 }
 
 func main() {
+	var err error
+
 	flag.Parse()
 	if *production {
-		config.Prod()
-	} else if *staging {
 		config.Prod()
 	} else {
 		config.Test()
 	}
 	handlers.Setup(*production)
-	models.Setup(*production)
-	conn, err := amqp.Dial(config.EmailBroker)
-	if err != nil {
-		log.Printf("Dial: %s", err)
-	}
-	c, err := rbtmq.NewConsumer(conn, config.EmailExchange, *exchangeType, config.EmailQueue, *consumerTag)
-	if err != nil {
-		log.Fatalf("%s", err)
-	}
-
-	deliveries := c.Consume(config.EmailQueue)
 
 	err = router.Start()
 	if err != nil {
 		panic(err)
 	}
-	for d := range deliveries {
-		go routeMapper(d)
+
+	conn, err = amqp.Dial("amqp://guest:guest@localhost:5672/")
+	failOnError(err, "Failed to connect to RabbitMQ")
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	failOnError(err, "Failed to open a channel")
+	defer ch.Close()
+
+	err = ch.ExchangeDeclare(
+		config.MainExchange, // name
+		"topic",             // type
+		true,                // durable
+		false,               // auto-deleted
+		false,               // internal
+		false,               // noWait
+		nil,                 // arguments
+	)
+	failOnError(err, "Failed to declare an exchange")
+	q, err := ch.QueueDeclare(
+		config.EmailQueue, // name
+		false,             // durable
+		false,             // delete when usused
+		false,             // exclusive
+		false,             // noWait
+		amqp.Table{
+			"x-dead-letter-exchange": config.DeadLetterExchange,
+		}, // arguments
+	)
+	failOnError(err, "Failed to declare a queue")
+
+	for _, route := range router.Routes {
+		err = ch.QueueBind(
+			q.Name,              // queue name
+			route.PathExp,       // routing key
+			config.MainExchange, // exchange
+			false,
+			nil)
+		failOnError(err, "Failed to bind a queue")
 	}
-	log.Print("deliveries ended")
+
+	msgs, err := ch.Consume(q.Name, "", false, false, false, false, nil)
+	for d := range msgs {
+		routeDelivery(d)
+	}
 }
 
-func routeMapper(d amqp.Delivery) {
-	route, params, err := router.FindRoute(d.RoutingKey)
+func routeDelivery(d amqp.Delivery) {
+	route, _, err := router.FindRoute(d.RoutingKey)
 	if err != nil || route == nil {
 		log.Printf("ERROR is: %v", err)
+		d.Nack(false, false)
 		return
 	}
 
-	var m map[string]*json.RawMessage
-	json.Unmarshal(d.Body, &m)
-	var body map[string]*json.RawMessage
-	json.Unmarshal(*m["Body"], &body)
-	handler := route.Dest.(func(map[string]string, map[string]*json.RawMessage) error)
+	params := make(map[string]interface{})
 
-	log.Println(d.RoutingKey, string(*m["Body"]))
-
-	err = handler(params, body)
+	handler := route.Dest.(func(map[string]interface{}, []byte) ([]byte, error, int))
+	_, err, _ = handler(params, d.Body)
 	if err != nil {
 		log.Printf("ERROR is: %v", err)
 		d.Nack(false, false)
