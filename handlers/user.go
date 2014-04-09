@@ -24,9 +24,9 @@ func init() {
 	))
 }
 
-func ConfirmSignup(params map[string]string, body map[string]*json.RawMessage) error {
+func ConfirmSignup(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	var user *User
-	json.Unmarshal(*body["user"], &user)
+	json.Unmarshal(body, &user)
 	userID := user.ID
 	email := user.Email
 
@@ -48,12 +48,12 @@ func ConfirmSignup(params map[string]string, body map[string]*json.RawMessage) e
 	mail.Html = html.String()
 
 	_, err := mail.Send()
-	return err
+	return nil, err, 200
 }
 
-func ForgotPassword(params map[string]string, body map[string]*json.RawMessage) error {
+func ForgotPassword(params map[string]interface{}, body []byte) ([]byte, error, int) {
 	var user *User
-	json.Unmarshal(*body["user"], &user)
+	json.Unmarshal(body, &user)
 	userID := user.ID
 	email := user.Email
 
@@ -76,5 +76,5 @@ func ForgotPassword(params map[string]string, body map[string]*json.RawMessage) 
 	mail.Html = html.String()
 
 	_, err := mail.Send()
-	return err
+	return nil, err, 200
 }

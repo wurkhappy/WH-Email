@@ -25,7 +25,6 @@ func init() {
 	formatDate := func(date time.Time) string {
 		return date.Format("Jan 2, 2006")
 	}
-	var err error
 	newAgreementTpl = template.Must(template.ParseFiles(
 		"templates/base.html",
 		"templates/agreement_new_user.html",
@@ -58,7 +57,7 @@ func init() {
 		"templates/base.html",
 		"templates/agreement_voided.html",
 	))
-	agreementSummaryTpl, err = template.New("agreement_summary.html").Funcs(template.FuncMap{"formatDate": formatDate, "unescape": unescaped}).ParseFiles(
+	agreementSummaryTpl, _ = template.New("agreement_summary.html").Funcs(template.FuncMap{"formatDate": formatDate, "unescape": unescaped}).ParseFiles(
 		"templates/agreement_summary.html",
 	)
 }

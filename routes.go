@@ -31,5 +31,13 @@ var router urlrouter.Router = urlrouter.Router{
 			PathExp: "payment.rejected",
 			Dest:    handlers.PaymentReject,
 		},
+		urlrouter.Route{
+			PathExp: "user.created",
+			Dest:    handlers.ConfirmSignup,
+		},
+		urlrouter.Route{
+			PathExp: "user.forgot_password",
+			Dest:    handlers.ForgotPassword,
+		},
 	},
 }
