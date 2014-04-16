@@ -1,204 +1,118 @@
 
 <!-- Font Awesome -->
 <!-- We need this for the checks -->
-  <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
 
 <style>
-    @import url(https://d3kq8dzp7eezz0.cloudfront.net/css-35/landing.css);
-    /* We need this for fonts and default styles*/
+@import url(https://d3kq8dzp7eezz0.cloudfront.net/css-35/landing.css);
+/* We need this for fonts and default styles*/
 
-    body {
-    	background:white;
-    }
+body {
+	background-color: white;
+	margin: 0;
+	padding: 0;
+}
 
-    p {
-    	margin-bottom: 11px;
-    }
+p {
+	margin-bottom: 11px;
+}
 
-    .fa-check {
-		float:left;
-		margin:0;
-		font-size:18px;
-	}
+.fa-check {
+	float:left;
+	margin:0;
+	font-size:18px;
+}
 
-	.task {
-		text-align: left;
-		position: relative;
-		top: 0;
-		font-size: 16px;
-		line-height: 20px;
-		font-weight: 300;
-		left:5px;
-		float:left;
-	}
+.task {
+	text-align: left;
+	position: relative;
+	top: 0;
+	font-size: 16px;
+	line-height: 20px;
+	font-weight: 300;
+	left:5px;
+	float:left;
+}
 
-	.task_item {
-		text-align: left;
-		position: relative;
-		top: -2px;
-		font-size: 16px;
-		line-height: 20px;
-		font-weight: 300;
-		margin-top: 5px;
-		clear: both;
-		overflow: hidden;
-		height: 35px;
-		padding: 10px;
-	}
+.task_item {
+	text-align: left;
+	position: relative;
+	top: -2px;
+	font-size: 16px;
+	line-height: 20px;
+	font-weight: 300;
+	margin-top: 5px;
+	clear: both;
+	overflow: hidden;
+	height: 35px;
+	padding: 10px;
+}
 
-	.task_item:nth-child(even) {
-		background: hsl(0, 0%, 96%);
-	}
+.task_item:nth-child(even) {
+	background: hsl(0, 0%, 96%);
+}
 
-	.line_item_payment {
-		display: block;
-		font-size: 16px;
-		margin: 0 0 10px 0;
-		text-align: left;
-		font-weight: 500;
-		float:right;
-		color:hsl(0, 0%, 39%);;
-	}
+.line_item_payment {
+	display: block;
+	font-size: 16px;
+	margin: 0 0 10px 0;
+	text-align: left;
+	font-weight: 500;
+	float:right;
+	color:hsl(0, 0%, 39%);;
+}
 
-	.line_item_rate {
-		position:absolute;
-		left:525px;
-	}
+.line_item_rate {
+	position:absolute;
+	left:525px;
+}
 
-	.line_item_hours {
-		position:absolute;
-		left:288px;
-	}
+.line_item_hours {
+	position:absolute;
+	left:288px;
+}
 </style>
-
 
 
 <div style="position:relative;overflow:hidden;width:892px;margin:60px auto; border: 1px solid hsl(200, 82%, 43%);">
 	<div style="background-color: hsl(200, 80%, 43%);padding: 35px 50px 25px;overflow:hidden;">
 		<div style="float:left;width:300px;">
-		<h1 style="color:white;font-weight: 100;font-family: museo_sans;text-transform: uppercase;font-size: 31px;line-height: 53px;">Invoice 1</h1>
-		<h2 style="text-align: left;padding: 0;margin: 0;line-height: 20px;color: hsl(0, 100%, 100%);font-family: museo_sans;font-size: 12px;font-weight: 300;margin-top: -10px;font-style: italic;">January 22nd, 2014</h2>
-		<h2 style="margin: 0;padding: 0;line-height: 28px;color: hsl(0, 100%, 100%);font-family: museo_sans;font-size: 16px;font-weight: 300;margin-top: 21px;">Elyse Sara</h2>
-		<p style="color: hsl(0, 100%, 100%);text-transform: uppercase;font-weight: 300;font-size: 10px;font-family: museo_sans;font-style: normal;text-align:left;margin:0;">Client</p>
+			<h1 style="color:white;font-weight: 100;font-family: museo_sans;text-transform: uppercase;font-size: 31px;line-height: 53px;">Invoice {{.PAYMENT_NUMBER}}</h1>
+			<h2 style="text-align: left;padding: 0;margin: 0;line-height: 20px;color: hsl(0, 100%, 100%);font-family: museo_sans;font-size: 12px;font-weight: 300;margin-top: -10px;font-style: italic;">{{.PAYMENT_REQUESTED_DATE}}</h2>
+			<h2 style="margin: 0;padding: 0;line-height: 28px;color: hsl(0, 100%, 100%);font-family: museo_sans;font-size: 16px;font-weight: 300;margin-top: 21px;">{{.RECIPIENT_FULLNAME}}</h2>
+			<p style="color: hsl(0, 100%, 100%);text-transform: uppercase;font-weight: 300;font-size: 10px;font-family: museo_sans;font-style: normal;text-align:left;margin:0;">Client</p>
 		</div>
 		<div style="float:right;width:490px;">
-			<h1 style="color: hsl(0, 100%, 100%);margin: 0;padding: 0;font-size: 40px;line-height: 50px;font-weight: 300;margin-top: 4px;text-align:right;">Elyse's Production Website</h1>
+			<h1 style="color: hsl(0, 100%, 100%);margin: 0;padding: 0;font-size: 40px;line-height: 50px;font-weight: 300;margin-top: 4px;text-align:right;">{{.AGREEMENT_NAME}}</h1>
 			<h2 style="text-align: right;padding: 0;margin: 0;line-height: 20px;color: hsl(0, 100%, 100%);font-family: museo_sans;font-size: 16px;font-weight: 300;margin-top: 34px;">
-				Marcus Ellison</h2>
-			<p style="color: hsl(0, 100%, 100%);text-transform: uppercase;font-weight: 300;font-size: 10px;font-family: museo_sans;font-style: normal;text-align:right;margin:0;">Freelancer</p>
+				{{.SENDER_FULLNAME}}</h2>
+				<p style="color: hsl(0, 100%, 100%);text-transform: uppercase;font-weight: 300;font-size: 10px;font-family: museo_sans;font-style: normal;text-align:right;margin:0;">Freelancer</p>
+			</div>
 		</div>
-	</div>
-	<div style="clear:both;"></div>
-	<div style="padding:20px 30px 30px 30px;margin-top:20px">
-		<h2 style="color: hsl(198, 100%, 35%);font-weight: 300;margin: 0;padding: 0;font-size:24px;line-height:38px;">Invoiced Tasks</h2>
+		<div style="clear:both;"></div>
+		<div style="padding:20px 30px 30px 30px;margin-top:20px">
+			<h2 style="color: hsl(198, 100%, 35%);font-weight: 300;margin: 0;padding: 0;font-size:24px;line-height:38px;">Invoiced Tasks</h2>
 
-		<ul style="margin:0 0 20px 0;padding: 0;list-style: none;">
-			<li style="border-bottom: 1px dashed hsl(186, 34%, 84%);padding: 15px 5px;list-style: none;overflow: hidden;position:relative;">
-				<h3 style="font-size: 18px;line-height: 29px;font-weight: 300;text-transform: uppercase;color: hsl(198, 100%, 35%);float:left;">Design</h3>
-				<span style="display: block;font-size: 16px;color: hsl(0, 0%, 50%);margin: 0 0 10px 0;text-align: left;font-weight: 500;float:right;color:hsl(38, 100%, 50%);margin-right: 12px;position:absolute;left:300px;">Hours</span>
-				<span style="display: block;font-size: 16px;color: hsl(0, 0%, 50%);margin: 0 0 10px 0;text-align: left;font-weight: 500;float:right;color:hsl(38, 100%, 50%);margin-right: 12px;position:absolute;left:550px;">Rate</span>
-				<span style="display: block;font-size: 16px;color: hsl(0, 0%, 50%);margin: 0 0 10px 0;text-align: left;font-weight: 500;float:right;color:hsl(38, 100%, 50%);margin-right: 12px;">Cost</span>
-				<ul style="list-style-type: none;margin: 0;margin-bottom: 10px;padding-left:20px;list-style:none;clear:both;position: relative;top: 12px;">
-					<li class="task_item">
-						<i class="fa fa-check"></i>
-						<div class="task">About Us Page</div>
-						<span class="line_item_payment">$300</span>
-						<span class="line_item_payment line_item_hours">3</span>
-						<span class="line_item_payment line_item_rate">$100</span>
-					</li>
-					<li class="task_item">
-						<i class="fa fa-check"></i>
-						<div class="task">Services Page</div>
-						<span class="line_item_payment">$300</span>
-						<span class="line_item_payment line_item_hours">3</span>
-						<span class="line_item_payment line_item_rate">$100</span>
-					</li>
-					<li class="task_item">
-						<i class="fa fa-check"></i>
-						<div class="task">Roster Page</div>
-						<span class="line_item_payment">$300</span>
-						<span class="line_item_payment line_item_hours">3</span>
-						<span class="line_item_payment line_item_rate">$100</span>
-					</li>
-					<li class="task_item">
-						<i class="fa fa-check"></i>
-						<div class="task">Contact Page</div>
-						<span class="line_item_payment">$300</span>
-						<span class="line_item_payment line_item_hours">3</span>
-						<span class="line_item_payment line_item_rate">$100</span>
-					</li>
-				</ul>
-				<div style="overflow: hidden;position: relative;top: 10px;padding:10px;">
-					<h4 style="color:hsl(0, 0%, 39%);font-size: 16px;font-weight: bold;float:left;">Subtotal:</h4>
-					<h4 style="color:hsl(0, 0%, 39%);float:right;font-size: 16px;font-weight: bold;">$1200</h4>
-				</div>
-			</li>
-			<li style="border-bottom: 1px dashed hsl(186, 34%, 84%);padding: 15px 5px;list-style: none;overflow: hidden;position:relative">
-				<h3 style="font-size: 18px;line-height: 29px;font-weight: 300;text-transform: uppercase;color: hsl(198, 100%, 35%);float:left;">Development</h3>
-				<span style="display: block;font-size: 16px;color: hsl(0, 0%, 50%);margin: 0 0 10px 0;text-align: left;font-weight: 500;float:right;color:hsl(38, 100%, 50%);margin-right: 12px;position:absolute;left:300px;">Hours</span>
-				<span style="display: block;font-size: 16px;color: hsl(0, 0%, 50%);margin: 0 0 10px 0;text-align: left;font-weight: 500;float:right;color:hsl(38, 100%, 50%);margin-right: 12px;position:absolute;left:550px;">Rate</span>
-				<span style="display: block;font-size: 16px;color: hsl(0, 0%, 50%);margin: 0 0 10px 0;text-align: left;font-weight: 500;float:right;color:hsl(38, 100%, 50%);margin-right: 12px;">Cost</span>
-				<ul style="list-style-type: none;margin: 0;margin-bottom: 10px;padding-left:20px;list-style:none;clear:both;position: relative;top: 12px;">
-					<li class="task_item">
-						<i class="fa fa-check"></i>
-						<div class="task">About Us Page</div>
-						<span class="line_item_payment">$300</span>
-						<span class="line_item_payment line_item_hours">3</span>
-						<span class="line_item_payment line_item_rate">$100</span>
-					</li>
-					<li class="task_item">
-						<i class="fa fa-check"></i>
-						<div class="task">Services Page</div>
-						<span class="line_item_payment">$300</span>
-						<span class="line_item_payment line_item_hours">3</span>
-						<span class="line_item_payment line_item_rate">$100</span>
-					</li>
-					<li class="task_item">
-						<i class="fa fa-check"></i>
-						<div class="task">Roster Page</div>
-						<span class="line_item_payment">$300</span>
-						<span class="line_item_payment line_item_hours">3</span>
-						<span class="line_item_payment line_item_rate">$100</span>
-					</li>
-					<li class="task_item">
-						<i class="fa fa-check"></i>
-						<div class="task">Contact Page</div>
-						<span class="line_item_payment">$300</span>
-						<span class="line_item_payment line_item_hours">3</span>
-						<span class="line_item_payment line_item_rate">$100</span>
-					</li>
-				</ul>
-				<div style="overflow: hidden;position: relative;top: 10px;padding:10px;">
-					<h4 style="color:hsl(0, 0%, 39%);font-size: 16px;font-weight: bold;float:left;">Subtotal:</h4>
-					<h4 style="color:hsl(0, 0%, 39%);float:right;font-size: 16px;font-weight: bold;">$1200</h4>
-				</div>
-			</li>
-		</ul>
+			<ul style="margin:0 0 20px 0;padding: 0;list-style: none;">
+				{{if .hourly}}
+				{{template "new_invoice_hourly" .}}
+				{{else}}
+				{{template "new_invoice_fixed" .}}
+				{{end}}
+			</ul>
 
-	</div>
-	<div style="padding:20px 30px 30px 30px;float:right;background: hsl(0,0%,96%);width:350px;margin: 0 30px 30px 0;">
+		</div>
+		<div style="padding:20px 30px 30px 30px;float:right;background: hsl(0,0%,96%);width:350px;margin: 0 30px 30px 0;">
 			<h2 style="color: hsl(198, 100%, 35%);margin: 0;padding: 0;font-weight: 100;font-size: 22px;font-weight:600;text-transform:uppercase;">Invoice Total</h2>
-			<span style="position: relative;top: -7px;display: block;font-size: 12px;color: hsl(0, 0%, 50%);margin: 0;text-align: left;font-weight: 500;color:hsl(38, 100%, 50%);">Expected July 4th, 2014</span>
-		<ul style="list-style:none;">
-			<li>
-				<div>
-					<span style="font-weight:300;font-size:16px;font-family:museo_sans;line-height:24px;">Design</span>
-					<span style="color: hsl(0, 0%, 39%);float:right;font-weight:">$1200</span></div>
-				<div>
-					<span style="">Development</span>
-					<span style="color: hsl(0, 0%, 39%);float:right;">$1200</span>
-				</div>
-			</li>
-		</ul>
+			<span style="position: relative;top: -7px;display: block;font-size: 12px;color: hsl(0, 0%, 50%);margin: 0;text-align: left;font-weight: 500;color:hsl(38, 100%, 50%);">Expected {{.PAYMENT_DATE}}</span>
 
-		<div style="overflow: hidden;margin-top: 8px;font-size: 16px;text-transform: uppercase;font-weight: 900;color: hsl(0, 0%, 39%);">
-			<span style="float:left;">Total:</span>
-			<span style="float:right;">$2400</span>
+			<div style="overflow: hidden;margin-top: 8px;font-size: 16px;text-transform: uppercase;font-weight: 900;color: hsl(0, 0%, 39%);">
+				<span style="float:left;">Total:</span>
+				<span style="float:right;">${{.PAYMENT_TOTAL}}</span>
+			</div>
+		</div>
+		<div style="padding:20px 30px 30px 30px;float: left;">
+			<p style="font-size: 12px;font-weight: 900;margin:0;font-style:italic;color:hsl(95, 56%, 57%);">Login to Wurk Happy to securely make payment online:</p>
+			<p style="margin: 0;text-transform: uppercase;font-size: 12px;font-weight: 300;">Go to <span style="color:hsl(198, 100%, 35%);font-weight: 600;text-transform: lowercase;font-size: 14px;">https://www.wurkhappy.com/#login</span> in your web browser.</p>
 		</div>
 	</div>
-	<div style="padding:20px 30px 30px 30px;float: left;">
-		<p style="font-size: 12px;font-weight: 900;margin:0;font-style:italic;color:hsl(95, 56%, 57%);">Login to Wurk Happy to securely make payment online:</p>
-		<p style="margin: 0;text-transform: uppercase;font-size: 12px;font-weight: 300;">Go to <span style="color:hsl(198, 100%, 35%);font-weight: 600;text-transform: lowercase;font-size: 14px;">https://www.wurkhappy.com/#login</span> in your web browser.</p>
-		<p style="margin: 0;text-transform: uppercase;font-size: 12px;font-weight: 300;">Your Email is: <span style="color:hsl(198, 100%, 35%);font-weight: 600;text-transform: lowercase;font-size: 14px;">marcus@wurkhappy.com</span></p>
-	</div>
-</div>
