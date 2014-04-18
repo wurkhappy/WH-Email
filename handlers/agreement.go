@@ -82,7 +82,7 @@ func AgreementSubmitted(params map[string]interface{}, body []byte) ([]byte, err
 }
 
 func newAgreement(agreement *Agreement, payments Payments, tasks Tasks, message string) ([]byte, error, int) {
-
+	var err error
 	client := getUserInfo(agreement.ClientID)
 	freelancer := getUserInfo(agreement.FreelancerID)
 
@@ -97,17 +97,16 @@ func newAgreement(agreement *Agreement, payments Payments, tasks Tasks, message 
 		agreementSentTpl.ExecuteTemplate(&html, "base", data)
 	}
 
-	var summaryHTML bytes.Buffer
 	dataSummary := map[string]interface{}{
-		"agreement":          agreement,
-		"tasks":              tasks,
-		"totalAmount":        data["AGREEMENT_COST"],
-		"SENDER_FULLNAME":    data["SENDER_FULLNAME"],
-		"RECIPIENT_FULLNAME": data["RECIPIENT_FULLNAME"],
-		"DATE_CREATED":       time.Now().Format("Jan 2, 2006"),
+		"agreement":  agreement,
+		"tasks":      tasks,
+		"payments":   payments,
+		"freelancer": freelancer,
+		"client":     client,
 	}
-	err := agreementSummaryTpl.Execute(&summaryHTML, dataSummary)
-	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", summaryHTML.Bytes())
+	d, _ := json.Marshal(dataSummary)
+	tplSummary, _ := sendServiceRequest("GET", config.PDFTemplatesService, "/template/agreement", d)
+	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", tplSummary)
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}

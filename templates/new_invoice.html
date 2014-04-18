@@ -1,10 +1,9 @@
 
 <!-- Font Awesome -->
 <!-- We need this for the checks -->
-  <link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
 
 <style>
-	
 	/* We need this for fonts and default styles*/
     @import url(https://d3kq8dzp7eezz0.cloudfront.net/css-35/pdf.css);
 
@@ -73,21 +72,22 @@
 </style>
 
 
-
 <div style="position:relative;overflow:hidden;width:892px;margin:60px auto; border: 1px solid hsl(200, 82%, 43%);">
 	<div style="background-color: hsl(200, 80%, 43%);padding: 35px 50px 25px;overflow:hidden;">
 		<div style="float:left;width:300px;">
-		<h1 style="color:white;font-weight: 100;font-family: museo_sans;text-transform: uppercase;font-size: 31px;line-height: 53px;">Invoice 1</h1>
-		<h2 style="text-align: left;padding: 0;margin: 0;line-height: 20px;color: hsl(0, 100%, 100%);font-family: museo_sans;font-size: 12px;font-weight: 300;margin-top: -10px;font-style: italic;">January 22nd, 2014</h2>
-		<h2 style="margin: 0;padding: 0;line-height: 28px;color: hsl(0, 100%, 100%);font-family: museo_sans;font-size: 16px;font-weight: 300;margin-top: 21px;">Elyse Sara</h2>
-		<p style="color: hsl(0, 100%, 100%);text-transform: uppercase;font-weight: 300;font-size: 10px;font-family: museo_sans;font-style: normal;text-align:left;margin:0;">Client</p>
+			<h1 style="color:white;font-weight: 100;font-family: museo_sans;text-transform: uppercase;font-size: 31px;line-height: 53px;">Invoice {{.PAYMENT_NUMBER}}</h1>
+			<h2 style="text-align: left;padding: 0;margin: 0;line-height: 20px;color: hsl(0, 100%, 100%);font-family: museo_sans;font-size: 12px;font-weight: 300;margin-top: -10px;font-style: italic;">{{.PAYMENT_REQUESTED_DATE}}</h2>
+			<h2 style="margin: 0;padding: 0;line-height: 28px;color: hsl(0, 100%, 100%);font-family: museo_sans;font-size: 16px;font-weight: 300;margin-top: 21px;">{{.RECIPIENT_FULLNAME}}</h2>
+			<p style="color: hsl(0, 100%, 100%);text-transform: uppercase;font-weight: 300;font-size: 10px;font-family: museo_sans;font-style: normal;text-align:left;margin:0;">Client</p>
 		</div>
 		<div style="float:right;width:490px;">
-			<h1 style="color: hsl(0, 100%, 100%);margin: 0;padding: 0;font-size: 40px;line-height: 50px;font-weight: 300;margin-top: 4px;text-align:right;">Elyse's Production Website</h1>
+			<h1 style="color: hsl(0, 100%, 100%);margin: 0;padding: 0;font-size: 40px;line-height: 50px;font-weight: 300;margin-top: 4px;text-align:right;">{{.AGREEMENT_NAME}}</h1>
 			<h2 style="text-align: right;padding: 0;margin: 0;line-height: 20px;color: hsl(0, 100%, 100%);font-family: museo_sans;font-size: 16px;font-weight: 300;margin-top: 34px;">
-				Marcus Ellison</h2>
-			<p style="color: hsl(0, 100%, 100%);text-transform: uppercase;font-weight: 300;font-size: 10px;font-family: museo_sans;font-style: normal;text-align:right;margin:0;">Freelancer</p>
+				{{.SENDER_FULLNAME}}</h2>
+				<p style="color: hsl(0, 100%, 100%);text-transform: uppercase;font-weight: 300;font-size: 10px;font-family: museo_sans;font-style: normal;text-align:right;margin:0;">Freelancer</p>
+			</div>
 		</div>
+<<<<<<< HEAD
 	</div>
 	<div style="clear:both;"></div>
 	<div style="padding:20px 30px 30px 30px;margin-top:20px">
@@ -155,31 +155,32 @@
 		</div>
 	</li>
 </ul>
+=======
+		<div style="clear:both;"></div>
+		<div style="padding:20px 30px 30px 30px;margin-top:20px">
+			<h2 style="color: hsl(198, 100%, 35%);font-weight: 300;margin: 0;padding: 0;font-size:24px;line-height:38px;">Invoiced Tasks</h2>
 
-	</div>
-	<div style="padding:20px 30px 30px 30px;float:right;background: hsl(0,0%,96%);width:350px;margin: 0 30px 30px 0;">
+			<ul style="margin:0 0 20px 0;padding: 0;list-style: none;">
+				{{if .hourly}}
+				{{template "new_invoice_hourly" .}}
+				{{else}}
+				{{template "new_invoice_fixed" .}}
+				{{end}}
+			</ul>
+>>>>>>> e41f6b3c5438075a6a460b69bfd72ceee77e63d5
+
+		</div>
+		<div style="padding:20px 30px 30px 30px;float:right;background: hsl(0,0%,96%);width:350px;margin: 0 30px 30px 0;">
 			<h2 style="color: hsl(198, 100%, 35%);margin: 0;padding: 0;font-weight: 100;font-size: 22px;font-weight:600;text-transform:uppercase;">Invoice Total</h2>
-			<span style="position: relative;top: -7px;display: block;font-size: 12px;color: hsl(0, 0%, 50%);margin: 0;text-align: left;font-weight: 500;color:hsl(38, 100%, 50%);">Expected July 4th, 2014</span>
-		<ul style="list-style:none;">
-			<li>
-				<div>
-					<span style="font-weight:300;font-size:16px;font-family:museo_sans;line-height:24px;">Design</span>
-					<span style="color: hsl(0, 0%, 39%);float:right;font-weight:">$1200</span></div>
-				<div>
-					<span style="">Development</span>
-					<span style="color: hsl(0, 0%, 39%);float:right;">$1200</span>
-				</div>
-			</li>
-		</ul>
+			<span style="position: relative;top: -7px;display: block;font-size: 12px;color: hsl(0, 0%, 50%);margin: 0;text-align: left;font-weight: 500;color:hsl(38, 100%, 50%);">Expected {{.PAYMENT_DATE}}</span>
 
-		<div style="overflow: hidden;margin-top: 8px;font-size: 16px;text-transform: uppercase;font-weight: 900;color: hsl(0, 0%, 39%);">
-			<span style="float:left;">Total:</span>
-			<span style="float:right;">$2400</span>
+			<div style="overflow: hidden;margin-top: 8px;font-size: 16px;text-transform: uppercase;font-weight: 900;color: hsl(0, 0%, 39%);">
+				<span style="float:left;">Total:</span>
+				<span style="float:right;">${{.PAYMENT_TOTAL}}</span>
+			</div>
+		</div>
+		<div style="padding:20px 30px 30px 30px;float: left;">
+			<p style="font-size: 12px;font-weight: 900;margin:0;font-style:italic;color:hsl(95, 56%, 57%);">Login to Wurk Happy to securely make payment online:</p>
+			<p style="margin: 0;text-transform: uppercase;font-size: 12px;font-weight: 300;">Go to <span style="color:hsl(198, 100%, 35%);font-weight: 600;text-transform: lowercase;font-size: 14px;">https://www.wurkhappy.com/#login</span> in your web browser.</p>
 		</div>
 	</div>
-	<div style="padding:20px 30px 30px 30px;float: left;">
-		<p style="font-size: 12px;font-weight: 900;margin:0;font-style:italic;color:hsl(95, 56%, 57%);">Login to Wurk Happy to securely make payment online:</p>
-		<p style="margin: 0;text-transform: uppercase;font-size: 12px;font-weight: 300;">Go to <span style="color:hsl(198, 100%, 35%);font-weight: 600;text-transform: lowercase;font-size: 14px;">https://www.wurkhappy.com/#login</span> in your web browser.</p>
-		<p style="margin: 0;text-transform: uppercase;font-size: 12px;font-weight: 300;">Your Email is: <span style="color:hsl(198, 100%, 35%);font-weight: 600;text-transform: lowercase;font-size: 14px;">marcus@wurkhappy.com</span></p>
-	</div>
-</div>
