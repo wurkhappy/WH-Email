@@ -72,7 +72,7 @@ func PaymentRequest(params map[string]interface{}, body []byte) ([]byte, error, 
 		data["hourly"] = true
 	}
 	invoiceTpl.ExecuteTemplate(&invoiceHTML, "invoice", data)
-	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", []byte(invoiceHTML.String()))
+	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", invoiceHTML.Bytes())
 
 	var html bytes.Buffer
 	paymentRequestTpl.ExecuteTemplate(&html, "base", data)
