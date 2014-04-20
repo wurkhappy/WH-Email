@@ -79,6 +79,7 @@ func PaymentRequest(params map[string]interface{}, body []byte) ([]byte, error, 
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
+	mail.CC = []models.To{{Email: sender.Email, Name: sender.getEmailOrName()}}
 	mail.FromEmail = "info@notifications.wurkhappy.com"
 	mail.Subject = data["SENDER_FULLNAME"].(string) + " requests payment"
 	mail.Html = html.String()

@@ -110,8 +110,9 @@ func newAgreement(agreement *Agreement, payments Payments, tasks Tasks, message 
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
+	mail.CC = []models.To{{Email: sender.Email, Name: sender.getEmailOrName()}}
 	mail.FromEmail = "info@notifications.wurkhappy.com"
-	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Just Sent You A New Agreement"
+	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Sent A New Agreement"
 	mail.Html = html.String()
 	mail.Attachments = append(mail.Attachments, &models.Attachment{Type: "application/pdf", Name: "Agreement.pdf", Content: string(pdfResp)})
 

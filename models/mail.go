@@ -20,6 +20,7 @@ type Mail struct {
 	FromEmail   string        `json:"from_email"`
 	FromName    string        `json:"from_name"`
 	To          []To          `json:"to"`
+	CC          []To          `json:"cc"`
 	BCCAddress  string        `json:"bcc_address,omitempty"`
 	Attachments []*Attachment `json:"attachments,omitempty"`
 	InReplyTo   string
@@ -53,6 +54,13 @@ func (mail *Mail) Send() (msgID string, erro error) {
 
 	for _, recipient := range mail.To {
 		err = w.WriteField("to", recipient.Name+" <"+recipient.Email+">")
+		if err != nil {
+			return "", err
+		}
+	}
+
+	for _, recipient := range mail.CC {
+		err = w.WriteField("cc", recipient.Name+" <"+recipient.Email+">")
 		if err != nil {
 			return "", err
 		}
