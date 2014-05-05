@@ -67,12 +67,17 @@ func PaymentRequest(params map[string]interface{}, body []byte) ([]byte, error, 
 	data := createPaymentData(agreement, payment, payments, tasks, action.Message, sender, recipient)
 	data["Payment"] = payment
 
-	var invoiceHTML bytes.Buffer
-	if len(payment.PaymentItems) > 0 && payment.PaymentItems[0].Hours != 0 {
-		data["hourly"] = true
+	dataSummary := map[string]interface{}{
+		"agreement":  agreement,
+		"tasks":      tasks,
+		"payments":   payments,
+		"payment":    payment,
+		"freelancer": freelancer,
+		"client":     client,
 	}
-	invoiceTpl.ExecuteTemplate(&invoiceHTML, "invoice", data)
-	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", invoiceHTML.Bytes())
+	d, _ := json.Marshal(dataSummary)
+	tplSummary, _ := sendServiceRequest("GET", config.PDFTemplatesService, "/template/invoice", d)
+	pdfResp, _ := sendServiceRequest("POST", config.PDFService, "/string", tplSummary)
 
 	var html bytes.Buffer
 	paymentRequestTpl.ExecuteTemplate(&html, "base", data)
