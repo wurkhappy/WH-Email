@@ -12,6 +12,10 @@ var router urlrouter.Router = urlrouter.Router{
 			Dest:    handlers.AgreementSubmitted,
 		},
 		urlrouter.Route{
+			PathExp: "agreement.updated",
+			Dest:    handlers.AgreementSubmitted,
+		},
+		urlrouter.Route{
 			PathExp: "agreement.accepted",
 			Dest:    handlers.AgreementAccept,
 		},
