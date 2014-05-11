@@ -100,6 +100,9 @@ func (mail *Mail) Send() (msgID string, erro error) {
 	req.Header.Set("Content-Type", w.FormDataContentType())
 	req.SetBasicAuth("api", "key-6t8u9z7c059n0is1c6k4779flnen1zf3")
 	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fmt.Println(err)
+	}
 	resbuf := new(bytes.Buffer)
 	resbuf.ReadFrom(res.Body)
 	mgResp := new(MailGunResp)

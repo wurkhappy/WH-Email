@@ -39,5 +39,9 @@ var router urlrouter.Router = urlrouter.Router{
 			PathExp: "user.forgot_password",
 			Dest:    handlers.ForgotPassword,
 		},
+		urlrouter.Route{
+			PathExp: "paymentinfo.missing_bank.new_agreement",
+			Dest:    handlers.BankAccountMissing,
+		},
 	},
 }

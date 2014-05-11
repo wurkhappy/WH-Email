@@ -91,6 +91,7 @@ func routeDelivery(d amqp.Delivery) {
 		d.Nack(false, false)
 		return
 	}
+	log.Println(d.RoutingKey)
 
 	params := make(map[string]interface{})
 
