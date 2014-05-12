@@ -135,8 +135,9 @@ func agreementChange(agreement *Agreement, payments Payments, tasks Tasks, messa
 
 	mail := new(models.Mail)
 	mail.To = []models.To{{Email: recipient.Email, Name: recipient.getEmailOrName()}}
+	mail.CC = []models.To{{Email: sender.Email, Name: sender.getEmailOrName()}}
 	mail.FromEmail = "info@notifications.wurkhappy.com"
-	mail.Subject = data["SENDER_FULLNAME"].(string) + " Requests Changes to Your Agreement"
+	mail.Subject = data["SENDER_FULLNAME"].(string) + " Has Updated Your Agreement"
 	mail.Html = html.String()
 
 	_, err = mail.Send()
