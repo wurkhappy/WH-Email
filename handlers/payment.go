@@ -201,18 +201,6 @@ type PaymentItem struct {
 
 type PaymentItems []*PaymentItem
 
-type Task struct {
-	ID           string    `json:"id"`
-	VersionID    string    `json:"versionID"`
-	IsPaid       bool      `json:"isPaid"`
-	Hours        float64   `json:"hours"`
-	SubTasks     []*Task   `json:"subTasks"`
-	Title        string    `json:"title"`
-	DateExpected time.Time `json:"dateExpected"`
-	LastAction   *Action   `json:"lastAction"`
-}
-type Tasks []*Task
-
 func (p Payments) getTotalCost() float64 {
 	var totalCost float64
 	for _, payment := range p {
