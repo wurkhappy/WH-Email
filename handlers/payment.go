@@ -186,6 +186,7 @@ type Payment struct {
 	IsDeposit    bool         `json:"isDeposit"`
 	AmountDue    float64      `json:"amountDue"`
 	AmountPaid   float64      `json:"amountPaid"`
+	Number       int64        `json:"number"`
 }
 
 type Payments []*Payment
