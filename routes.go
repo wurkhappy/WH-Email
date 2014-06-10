@@ -44,6 +44,10 @@ var router urlrouter.Router = urlrouter.Router{
 			Dest:    handlers.BankAccountMissing,
 		},
 		urlrouter.Route{
+			PathExp: "paymentinfo.bank_account.added",
+			Dest:    handlers.BankAccountAdded,
+		},
+		urlrouter.Route{
 			PathExp: "tasks.updated.notify",
 			Dest:    handlers.TasksUpdated,
 		},
